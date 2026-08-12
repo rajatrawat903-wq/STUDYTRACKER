@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Command12 — Study & Progress Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0F1A; --surface:#121826; --surface2:#182036; --border:#232C42;
+  --ink:#E7EAF3; --ink-dim:#8892AB; --ink-faint:#5A6480;
+  --accent:#7C6CF6; --accent-dim:#7C6CF62a; --amber:#F5A623; --amber-dim:#F5A6232a;
+  --green:#33C481; --green-dim:#33C4812a; --red:#F0555A; --red-dim:#F0555A2a;
+  --cyan:#3FC6E0;
+  --radius:14px; --radius-sm:9px;
+  --shadow: 0 8px 30px rgba(0,0,0,0.35);
+  --font-display:'Space Grotesk',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
+}
+[data-theme="light"]{
+  --bg:#F5F4F0; --surface:#FFFFFF; --surface2:#FBFAF7; --border:#E4E1D8;
+  --ink:#1B1D22; --ink-dim:#6B6D76; --ink-faint:#9A9CA5;
+  --accent:#6551E8; --accent-dim:#6551E81a; --amber:#C97A1B; --amber-dim:#C97A1b1a;
+  --green:#1C9A63; --green-dim:#1C9A631a; --red:#D6444A; --red-dim:#D6444A1a;
+  --cyan:#0E90AC;
+  --shadow: 0 8px 24px rgba(30,25,15,0.08);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{background:var(--bg); color:var(--ink); font-family:var(--font-body); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:8px;height:8px;} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit; background:var(--surface2); border:1px solid var(--border); color:var(--ink); border-radius:8px; padding:8px 10px; font-size:13px; outline:none; width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+.app{display:grid; grid-template-columns:236px 1fr; min-height:100vh;}
+.sidebar{background:var(--surface); border-right:1px solid var(--border); padding:22px 14px; display:flex; flex-direction:column; gap:4px; position:sticky; top:0; height:100vh; overflow-y:auto;}
+.brand{font-family:var(--font-display); font-weight:700; font-size:19px; letter-spacing:-0.02em; padding:4px 10px 4px; display:flex; align-items:center; gap:8px;}
+.brand .dot{width:9px;height:9px;border-radius:3px;background:var(--accent); box-shadow:0 0 12px var(--accent);}
+.brand small{display:block; font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); font-weight:500; letter-spacing:0.04em;}
+.navgroup{margin-top:18px; margin-bottom:2px; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:var(--ink-faint); padding:0 10px; font-weight:600;}
+.navitem{display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px; color:var(--ink-dim); font-size:13.5px; font-weight:500; cursor:pointer; transition:.12s;}
+.navitem:hover{background:var(--surface2); color:var(--ink);}
+.navitem.active{background:var(--accent-dim); color:var(--accent);}
+.navitem svg{width:16px;height:16px; flex-shrink:0;}
+.main{padding:26px 34px 60px; max-width:1360px;}
+.topbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:22px;}
+.pagetitle{font-family:var(--font-display); font-size:26px; font-weight:700; letter-spacing:-0.02em;}
+.pagesub{color:var(--ink-dim); font-size:13px; margin-top:2px;}
+.topactions{display:flex; gap:10px; align-items:center;}
+.iconbtn{width:36px;height:36px;border-radius:9px;background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--ink-dim);}
+.iconbtn:hover{color:var(--ink); border-color:var(--accent);}
+.btn{background:var(--accent); color:#fff; border:none; padding:9px 16px; border-radius:9px; font-weight:600; font-size:13px; display:inline-flex; align-items:center; gap:6px;}
+.btn:hover{filter:brightness(1.08);}
+.btn.secondary{background:var(--surface2); color:var(--ink); border:1px solid var(--border);}
+.btn.ghost{background:transparent; color:var(--accent); border:1px solid var(--accent-dim);}
+.btn.danger{background:var(--red-dim); color:var(--red);}
+.grid{display:grid; gap:16px;}
+.g4{grid-template-columns:repeat(4,1fr);} .g3{grid-template-columns:repeat(3,1fr);} .g2{grid-template-columns:repeat(2,1fr);}
+@media(max-width:1100px){.g4{grid-template-columns:repeat(2,1fr);} .g3{grid-template-columns:repeat(2,1fr);}}
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px;}
+
+/* ===== Premium subject / syllabus UI ===== */
+.subject-card{position:relative;overflow:hidden;background:linear-gradient(145deg,var(--surface),var(--surface2));border-radius:18px;padding:20px;min-height:210px;box-shadow:0 8px 24px rgba(0,0,0,.08);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}
+.subject-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 14px 32px rgba(0,0,0,.14);}
+.subject-card .subject-accent{position:absolute;left:0;top:0;bottom:0;width:4px;}
+.subject-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.subject-name{font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:-.02em;}
+.subject-menu{width:34px;height:34px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--ink-dim);cursor:pointer;}
+.subject-menu:hover{color:var(--ink);border-color:var(--accent);}
+.subject-open{margin-top:16px;padding-top:13px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;color:var(--ink-dim);font-size:12px;font-weight:600;}
+.subject-picker-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;}
+.subject-picker-group{border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;background:var(--surface);}
+.picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:7px;}
+.picker-item{display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:var(--surface2);font-size:12px;font-weight:600;transition:.12s;}
+.picker-item:hover{border-color:var(--accent);transform:translateY(-1px);}
+.picker-item input{accent-color:var(--accent);width:15px;height:15px;}
+.chapter-card{background:linear-gradient(145deg,var(--surface),var(--surface2));border-radius:16px;transition:transform .16s,border-color .16s,box-shadow .16s;}
+.chapter-card:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.1);}
+@media(max-width:700px){.main{padding:18px 14px 50px}.g3,.g2{grid-template-columns:1fr}.topbar{align-items:flex-start;gap:12px;flex-direction:column}.topactions{width:100%;flex-wrap:wrap}.picker-grid{grid-template-columns:1fr 1fr;}}
+.card.pad-lg{padding:22px;}
+.stat-card{display:flex; flex-direction:column; gap:6px;}
+.stat-label{font-size:11.5px; color:var(--ink-dim); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;}
+.stat-value{font-family:var(--font-mono); font-size:26px; font-weight:700; letter-spacing:-0.01em;}
+.stat-delta{font-size:11.5px; color:var(--ink-faint);}
+.section-title{font-family:var(--font-display); font-size:16px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between;}
+.ring-wrap{display:flex; flex-direction:column; align-items:center; gap:8px;}
+.ring-label{font-size:12px; color:var(--ink-dim); font-weight:600; text-align:center;}
+.ring-value{font-family:var(--font-mono); font-weight:700; font-size:20px;}
+.pill{display:inline-flex; align-items:center; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600;}
+.pill.blue{background:var(--accent-dim); color:var(--accent);}
+.pill.green{background:var(--green-dim); color:var(--green);}
+.pill.amber{background:var(--amber-dim); color:var(--amber);}
+.pill.red{background:var(--red-dim); color:var(--red);}
+.pill.gray{background:var(--surface2); color:var(--ink-dim); border:1px solid var(--border);}
+table{width:100%; border-collapse:collapse;}
+th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--border);}
+td{padding:10px 10px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr.rowhover:hover{background:var(--surface2);}
+.progress-bar{height:7px; background:var(--surface2); border-radius:6px; overflow:hidden; border:1px solid var(--border);}
+.progress-fill{height:100%; background:linear-gradient(90deg,var(--accent),var(--cyan)); border-radius:6px; transition:.3s;}
+.tabs{display:flex; gap:6px; border-bottom:1px solid var(--border); margin-bottom:18px; overflow-x:auto;}
+.tab{padding:9px 14px; font-size:13px; font-weight:600; color:var(--ink-dim); border-bottom:2px solid transparent; white-space:nowrap; cursor:pointer;}
+.tab.active{color:var(--accent); border-color:var(--accent);}
+.modal-bg{position:fixed; inset:0; background:rgba(5,7,12,0.6); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px;}
+[data-theme="light"] .modal-bg{background:rgba(30,25,15,0.25);}
+.modal{background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; width:520px; max-width:100%; max-height:88vh; overflow-y:auto; box-shadow:var(--shadow);}
+.modal h3{font-family:var(--font-display); font-size:18px; margin-bottom:16px;}
+.field{margin-bottom:12px;}
+.field label{display:block; font-size:11.5px; color:var(--ink-dim); font-weight:600; margin-bottom:5px; text-transform:uppercase; letter-spacing:.03em;}
+.fieldrow{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.checklist-grid{display:grid; grid-template-columns:1fr 1fr; gap:6px 14px;}
+.chk-item{display:flex; align-items:center; gap:8px; font-size:12.5px; padding:6px 8px; border-radius:7px;}
+.chk-item:hover{background:var(--surface2);}
+.chk-item input{width:15px;height:15px;}
+.empty{text-align:center; padding:40px 20px; color:var(--ink-faint);}
+.empty svg{width:36px;height:36px; margin-bottom:10px; opacity:.5;}
+.badge-row{display:flex; gap:10px; flex-wrap:wrap;}
+.badge{display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 10px; border-radius:12px; background:var(--surface2); border:1px solid var(--border); width:104px; text-align:center;}
+.badge.earned{border-color:var(--amber); background:var(--amber-dim);}
+.badge .bicon{font-size:22px;}
+.badge .btitle{font-size:10.5px; font-weight:600; color:var(--ink-dim);}
+.badge.earned .btitle{color:var(--amber);}
+.searchbox{display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:7px 12px; width:260px;}
+.searchbox input{background:transparent; border:none; padding:0;}
+.searchbox svg{width:15px;height:15px; color:var(--ink-faint); flex-shrink:0;}
+.heat-cell{width:13px;height:13px;border-radius:3px; background:var(--surface2);}
+.filterbar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:center;}
+.filterbar select{width:auto; min-width:120px;}
+.smallmuted{color:var(--ink-faint); font-size:12px;}
+.subj-dot{width:9px;height:9px;border-radius:3px; display:inline-block; margin-right:6px;}
+.icon-action{background:none;border:none;color:var(--ink-faint); padding:4px; border-radius:6px;}
+.icon-action:hover{color:var(--accent); background:var(--surface2);}
+.hidden{display:none !important;}
+.toast{position:fixed; bottom:22px; right:22px; background:var(--surface); border:1px solid var(--border); padding:12px 18px; border-radius:10px; box-shadow:var(--shadow); font-size:13px; z-index:200; display:flex; align-items:center; gap:8px;}
+.day-col{background:var(--surface2); border-radius:10px; padding:10px; min-height:120px;}
+.day-col h4{font-size:12px; margin-bottom:8px; color:var(--ink-dim); display:flex; justify-content:space-between;}
+.priority-item{display:flex; align-items:center; gap:10px; padding:10px; border-radius:10px; background:var(--surface2); margin-bottom:8px;}
+.priority-rank{font-family:var(--font-mono); font-weight:700; color:var(--accent); width:22px; text-align:center;}
+ .app-footer{margin-top:34px;padding:18px 8px 4px;border-top:1px solid var(--border);color:var(--ink-faint);}
+ .footer-credit{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;text-align:center;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--font-mono);} .picker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;} .picker-item{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--border);background:var(--surface2);border-radius:10px;cursor:pointer;transition:.15s;} .picker-item:hover{border-color:var(--accent);transform:translateY(-1px);} .picker-item input{accent-color:var(--accent);width:16px;height:16px;} .picker-group{margin-bottom:18px;}
+ .footer-credit b{color:var(--accent);font-weight:700}.footer-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}.footer-sep{opacity:.45}
+ @media(max-width:700px){.app-footer{margin-top:24px}.footer-credit{font-size:9px;gap:6px}.footer-sep{display:none}}
+::placeholder{color:var(--ink-faint);}
+
+.subject-actions{display:flex;gap:5px;align-items:center}
+.subject-actions .icon-action{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:10px;background:var(--surface2);color:var(--ink);cursor:pointer}
+.subject-actions .icon-action:hover{transform:translateY(-1px);border-color:var(--accent,#7C6CF6)}
+.subject-actions .danger-icon:hover{color:#F0555A;border-color:#F0555A}
+</style>
+</head>
+<body data-theme="dark">
+<div class="app">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main" id="main"></div>
+</div>
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script>
+/* ============================= ICONS ============================= */
+const ICONS = {
+  dashboard:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+  subjects:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  chapters:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/><path d="M15 4v5h5"/></svg>',
+  lectures:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>',
+  planner:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14l2 2 4-4"/></svg>',
+  sessions:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>',
+  revision:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>',
+  tests:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  pyq:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+  calendar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+  analytics:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>',
+  goals:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>',
+  sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+  fire:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-1-2-1-3.5a3 3 0 0 1 3-3c1.5 3 3 5.5 3 8a6.5 6.5 0 0 1-13 0c0-3.5 2-6.5 4-9 .5 1.5 1 2.5 2 3.5-1 1-1 2-1 3.5z"/></svg>',
+  download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
+  upload:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>',
+};
+
+/* ============================= STATE ============================= */
+const CHECKLIST_ITEMS = [
+  ['lectures','Lectures'],['lectureNotes','Lecture Notes'],['shortNotes','Short Notes'],
+  ['ncertReading','NCERT Reading'],['ncertQuestions','NCERT Questions'],['dpp','DPP'],
+  ['module','Module'],['practiceQuestions','Practice Qs'],['pyqs','PYQs'],
+  ['importantQuestions','Important Qs'],['formulaRevision','Formula Revision'],['conceptRevision','Concept Revision'],
+  ['firstRevision','1st Revision'],['secondRevision','2nd Revision'],['mockTest','Mock/Test'],['errorAnalysis','Error Analysis']
+];
+const SUBJECT_COLORS = {'Physics':'#7C6CF6','Chemistry':'#33C481','Mathematics':'#F5A623','Computer Science':'#3FC6E0','English':'#F0555A','Yoga':'#C084FC'};
+
+let state = null;
+let ui = { page:'dashboard', theme:'dark', chapterFilter:{}, lectureFilter:{}, calMonth: new Date().getMonth(), calYear: new Date().getFullYear() };
+let saveTimer = null;
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function daysAgoISO(n){ let d=new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+function daysFromNowISO(n){ let d=new Date(); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function fmtDate(iso){ if(!iso) return '—'; const d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+function subjectById(id){ return state.subjects.find(s=>s.id===id); }
+function chapterById(id){ return state.chapters.find(c=>c.id===id); }
+function subjectColor(id){ const s=subjectById(id); return s ? (SUBJECT_COLORS[s.name]||s.color||'#7C6CF6') : '#888'; }
+
+/* ---- computed metrics ---- */
+function chapterCompletion(ch){
+  const cl = ch.checklist||{};
+  let done=0; CHECKLIST_ITEMS.forEach(([k])=>{ if(cl[k]) done++; });
+  return Math.round(done/CHECKLIST_ITEMS.length*100);
+}
+function chaptersOf(subjectId){ return state.chapters.filter(c=>c.subjectId===subjectId); }
+function lecturesOf(chapterId){ return state.lectures.filter(l=>l.chapterId===chapterId); }
+function subjectStats(subjectId){
+  const chs = chaptersOf(subjectId);
+  const total = chs.length;
+  const completed = chs.filter(c=>c.status==='Completed').length;
+  const pct = total? Math.round(chs.reduce((a,c)=>a+chapterCompletion(c),0)/total) : 0;
+  const lecs = state.lectures.filter(l=>l.subjectId===subjectId);
+  const lecDone = lecs.filter(l=>l.status==='Completed').length;
+  const hrs = state.sessions.filter(s=>s.subjectId===subjectId).reduce((a,s)=>a+(s.duration||0),0)/60;
+  const tsts = state.tests.filter(t=>t.subjectId===subjectId);
+  const avgScore = tsts.length? Math.round(tsts.reduce((a,t)=>a+(t.marksObtained/t.maxMarks*100),0)/tsts.length) : null;
+  return {total, completed, pct, totalLec: lecs.length, lecDone, lecPending: lecs.length-lecDone, hrs: Math.round(hrs*10)/10, avgScore};
+}
+function overallCompletion(examFilter){
+  let chs = state.chapters;
+  if(examFilter) chs = chs.filter(c=>{ const s=subjectById(c.subjectId); return s && (s.exam===examFilter || s.exam==='Both'); });
+  if(!chs.length) return 0;
+  return Math.round(chs.reduce((a,c)=>a+chapterCompletion(c),0)/chs.length);
+}
+function studyHoursBetween(fromISO,toISO){
+  return state.sessions.filter(s=>s.date>=fromISO && s.date<=toISO).reduce((a,s)=>a+(s.duration||0),0)/60;
+}
+function weekBounds(d=new Date()){
+  const day=(d.getDay()+6)%7; const mon=new Date(d); mon.setDate(d.getDate()-day);
+  const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+  return [mon.toISOString().slice(0,10), sun.toISOString().slice(0,10)];
+}
+function currentStreak(){
+  const dates = new Set(state.sessions.map(s=>s.date));
+  let streak=0, d=new Date();
+  if(!dates.has(todayISO())) d.setDate(d.getDate()-1);
+  while(dates.has(d.toISOString().slice(0,10))){ streak++; d.setDate(d.getDate()-1); }
+  return streak;
+}
+function totalXP(){
+  let xp = state.sessions.reduce((a,s)=>a+Math.round((s.duration||0)/2),0);
+  xp += state.chapters.filter(c=>c.status==='Completed').length*50;
+  xp += state.tests.length*20;
+  return xp;
+}
+function levelFromXP(xp){ return Math.floor(xp/500)+1; }
+function badgeList(){
+  const streak=currentStreak();
+  const lecDone = state.lectures.filter(l=>l.status==='Completed').length;
+  const totalHrs = state.sessions.reduce((a,s)=>a+(s.duration||0),0)/60;
+  const pyqSolved = state.pyqs.reduce((a,p)=>a+(p.attempted||0),0);
+  const chapDone = state.chapters.filter(c=>c.status==='Completed').length;
+  const subjFull = state.subjects.some(s=> chaptersOf(s.id).length>0 && chaptersOf(s.id).every(c=>c.status==='Completed'));
+  return [
+    {icon:'🔥', title:'7 Day Streak', earned: streak>=7},
+    {icon:'🎬', title:'50 Lectures', earned: lecDone>=50},
+    {icon:'📘', title:'First Chapter', earned: chapDone>=1},
+    {icon:'🎯', title:'100 PYQs', earned: pyqSolved>=100},
+    {icon:'⏱️', title:'50 Study Hrs', earned: totalHrs>=50},
+    {icon:'🏆', title:'Subject Mastered', earned: subjFull},
+  ];
+}
+function priorityScore(ch){
+  let score = (100-chapterCompletion(ch))*1.0;
+  if(ch.priority==='Very High') score+=40; else if(ch.priority==='High') score+=25; else if(ch.priority==='Medium') score+=10;
+  const lecs = lecturesOf(ch.id); const pending = lecs.filter(l=>l.status!=='Completed').length;
+  score += pending*3;
+  const tsts = state.tests.filter(t=>t.chapterId===ch.id);
+  if(tsts.length){ const avg = tsts.reduce((a,t)=>a+(t.marksObtained/t.maxMarks*100),0)/tsts.length; if(avg<50) score+=30; else if(avg<70) score+=15; }
+  const revs = state.revisions.filter(r=>r.chapterId===ch.id);
+  const overdue = revs.some(r=>r.status!=='Done' && r.dueDate < todayISO());
+  if(overdue) score+=25;
+  if(ch.targetDate && ch.targetDate < daysFromNowISO(7) && ch.status!=='Completed') score+=20;
+  return Math.round(score);
+}
+
+/* ============================= OPTIONAL SUBJECT / CHAPTER LIBRARY ============================= */
+// IMPORTANT: These are PICKER OPTIONS only. Nothing below is inserted into state
+// until the user explicitly selects it. The app always starts completely blank.
+const SUBJECT_LIBRARY = {
+  'PCM': ['Physics','Chemistry','Mathematics'],
+  'PCB / Biology': ['Physics','Chemistry','Biology'],
+  'PCMB': ['Physics','Chemistry','Mathematics','Biology'],
+  'English / Languages': ['English Core','English Elective','Hindi Core','Hindi Elective','Sanskrit','French','German','Urdu','Punjabi','Regional Language'],
+  'Commerce': ['Accountancy','Business Studies','Economics','Applied Mathematics','Entrepreneurship'],
+  'Arts / Humanities': ['History','Political Science','Geography','Sociology','Psychology','Economics','Legal Studies','Fine Arts','Home Science'],
+  'Computer / IT': ['Computer Science','Informatics Practices','Information Technology','Artificial Intelligence','Data Science','Web Development'],
+  'Other / Vocational': ['Physical Education','Yoga','Entrepreneurship','Fine Arts','Music','General Studies']
+};
+
+const CHAPTER_LIBRARY = {
+  'Physics': ['Electric Charges and Fields','Electrostatic Potential and Capacitance','Current Electricity','Moving Charges and Magnetism','Magnetism and Matter','Electromagnetic Induction','Alternating Current','Electromagnetic Waves','Ray Optics and Optical Instruments','Wave Optics','Dual Nature of Radiation and Matter','Atoms','Nuclei','Semiconductor Electronics'],
+  'Chemistry': ['Solutions','Electrochemistry','Chemical Kinetics','The d- and f-Block Elements','Coordination Compounds','Haloalkanes and Haloarenes','Alcohols, Phenols and Ethers','Aldehydes, Ketones and Carboxylic Acids','Amines','Biomolecules'],
+  'Mathematics': ['Relations and Functions','Inverse Trigonometric Functions','Matrices','Determinants','Continuity and Differentiability','Applications of Derivatives','Integrals','Application of Integrals','Differential Equations','Vector Algebra','Three Dimensional Geometry','Linear Programming','Probability'],
+  'Biology': ['Sexual Reproduction in Flowering Plants','Human Reproduction','Reproductive Health','Principles of Inheritance and Variation','Molecular Basis of Inheritance','Evolution','Human Health and Disease','Strategies for Enhancement in Food Production','Microbes in Human Welfare','Biotechnology: Principles and Processes','Biotechnology and its Applications','Organisms and Populations','Ecosystem','Biodiversity and Conservation'],
+  'English Core': ['The Last Lesson','Lost Spring','Deep Water','The Rattrap','Indigo','Poets and Pancakes','The Interview','Going Places','My Mother at Sixty-Six','Keeping Quiet','A Thing of Beauty','A Roadside Stand','Aunt Jennifer’s Tigers','The Third Level','The Tiger King','Journey to the End of the Earth','The Enemy','On the Face of It','Memories of Childhood','Creative Writing Skills'],
+  'Accountancy': ['Accounting for Partnership Firms – Basic Concepts','Admission of a Partner','Retirement / Death of a Partner','Dissolution of Partnership Firm','Accounting for Share Capital','Issue and Redemption of Debentures','Financial Statements of a Company','Analysis of Financial Statements','Accounting Ratios','Cash Flow Statement'],
+  'Business Studies': ['Nature and Significance of Management','Principles of Management','Business Environment','Planning','Organising','Staffing','Directing','Controlling','Financial Management','Financial Markets','Marketing Management','Consumer Protection','Entrepreneurship Development'],
+  'Economics': ['Introduction to Macroeconomics','National Income Accounting','Money and Banking','Determination of Income and Employment','Government Budget and the Economy','Balance of Payments','Indian Economy on the Eve of Independence','Indian Economy 1950–1990','Liberalisation, Privatisation and Globalisation','Human Capital Formation','Rural Development','Employment','Environment and Sustainable Development','Development Experience of India'],
+  'History': ['Bricks, Beads and Bones','Kings, Farmers and Towns','Kinship, Caste and Class','Thinkers, Beliefs and Buildings','Through the Eyes of Travellers','Bhakti-Sufi Traditions','An Imperial Capital: Vijayanagara','Peasants, Zamindars and the State','Kings and Chronicles','Colonialism and the Countryside','Rebels and the Raj','Mahatma Gandhi and the Nationalist Movement','Framing the Constitution'],
+  'Political Science': ['The End of Bipolarity','Contemporary Centres of Power','Challenges of Nation-Building','Era of One-Party Dominance','Politics of Planned Development','Crisis of the Democratic Order','Regional Aspirations','Recent Developments in Indian Politics','Challenges to and Restoration of the Congress System','International Organizations'],
+  'Geography': ['Human Geography','The World Population','Human Development','Primary Activities','Secondary Activities','Tertiary and Quaternary Activities','Transport and Communication','International Trade','Population Distribution, Density, Growth and Composition','Migration','Human Settlements','Land Resources and Agriculture','Water Resources','Mineral and Energy Resources','Manufacturing Industries','Planning and Sustainable Development in Indian Context'],
+  'Sociology': ['Introducing Indian Society','The Demographic Structure of Indian Society','Social Institutions: Continuity and Change','Patterns of Social Inequality and Exclusion','Challenges of Cultural Diversity','Structural Change','Cultural Change','Change and Development in Rural Society','Change and Development in Industrial Society','Globalisation and Social Change','Mass Media and Communications','Social Movements'],
+  'Psychology': ['Variations in Psychological Attributes','Self and Personality','Meeting Life Challenges','Psychological Disorders','Therapeutic Approaches','Attitude and Social Cognition','Social Influence and Group Processes'],
+  'Computer Science': ['Computer Networks','Database Concepts','Introduction to Python','Data Structures','Society, Law and Ethics','Computational Thinking and Programming'],
+  'Informatics Practices': ['Data Handling using Pandas','Data Visualisation','Database Query using SQL','Introduction to Computer Networks','Societal Impacts'],
+  'Physical Education': ['Management of Sporting Events','Children and Women in Sports','Yoga and Lifestyle','Physical Education and Sports for CWSN','Sports and Nutrition','Test and Measurement in Sports','Physiology and Sports','Kinesiology, Biomechanics and Sports','Psychology and Sports','Training in Sports'],
+  'Yoga': ['Communication Skills','Self-Management Skills','ICT Skills','Entrepreneurial Skills','Green Skills','Introduction to Yoga and Yogic Practices','Introduction to Yoga Texts','Yoga for Health Promotion','Project Work','Practical File','Viva'],
+  'Legal Studies': ['Judiciary','Alternative Dispute Resolution','Human Rights in India','Legal Profession in India','Legal Services','International Context'],
+  'Fine Arts': ['Rajasthani Miniature Painting','Pahari Schools of Painting','Mughal School of Miniature Painting','Deccani Schools of Painting','Bengal School of Painting','Modern Indian Art'],
+  'Applied Mathematics': ['Numbers, Quantification and Numerical Applications','Algebra','Calculus','Probability Distributions','Descriptive Statistics','Financial Mathematics','Linear Programming'],
+  'Entrepreneurship': ['Entrepreneurial Opportunity','Entrepreneurial Planning','Enterprise Marketing','Enterprise Growth Strategies','Business Arithmetic','Resource Mobilization'],
+  'Home Science': ['Work, Livelihood and Career','Nutrition, Food Science and Technology','Human Development','Fabric and Apparel','Resource Management','Communication and Extension'],
+  'Music': ['Elements of Music','Raga','Tala','Notation','History of Indian Music','Vocal / Instrumental Practice'],
+  'Sociology': ['Introducing Indian Society','The Demographic Structure of Indian Society','Social Institutions: Continuity and Change','Patterns of Social Inequality and Exclusion','Challenges of Cultural Diversity','Structural Change','Cultural Change','Change and Development in Rural Society','Change and Development in Industrial Society','Globalisation and Social Change','Mass Media and Communications','Social Movements'],
+  'Psychology': ['Variations in Psychological Attributes','Self and Personality','Meeting Life Challenges','Psychological Disorders','Therapeutic Approaches','Attitude and Social Cognition','Social Influence and Group Processes'],
+  'Information Technology': ['Digital Documentation','Electronic Spreadsheet','Database Management System','Web Applications and Security','Green Skills','Employability Skills'],
+  'Artificial Intelligence': ['AI Project Cycle','Introduction to AI','Data Literacy','Machine Learning Basics','Computer Vision','Natural Language Processing','Evaluation and Ethics'],
+  'Data Science': ['Python Basics','Data Collection','Data Cleaning','Exploratory Data Analysis','Data Visualisation','Statistics for Data Science','Machine Learning Basics'],
+  'English Elective': ['Reading Comprehension','Writing Skills','Literature','Creative Writing','Grammar and Vocabulary'],
+  'Hindi Core': ['अपठित बोध','रचनात्मक लेखन','आत्मपरिचय','पतंग','कविता और कहानी','भक्तिन','बाजार दर्शन','पहलवान की ढोलक'],
+  'Sanskrit': ['अपठितावबोधनम्','रचनात्मक कार्यम्','व्याकरणम्','पठित-अवबोधनम्','अनुवादः'],
+  'French': ['Compréhension','Expression écrite','Grammaire','Vocabulaire','Civilisation','Culture']
+};
+
+function librarySubjects(){ return Object.values(SUBJECT_LIBRARY).flat(); }
+function libraryChapters(subjectName){ return CHAPTER_LIBRARY[subjectName] || []; }
+
+function defaultState(){
+  return emptyState();
+}
+
+async function loadState(){
+  try{
+    // One-time migration: this build starts as a completely blank universal app.
+    // Any old syllabus/sample data from previous builds is removed only once.
+    if(localStorage.getItem('command12-universal-v3') !== '1'){
+      localStorage.removeItem('command12-app-data');
+      localStorage.setItem('command12-universal-v3','1');
+    }
+    const saved = localStorage.getItem('command12-app-data');
+    if(saved){
+      state = JSON.parse(saved);
+      state = normalizeState(state);
+
+      // Empty is a valid user state. Never inject sample subjects or chapters.
+
+    }else{
+      state = emptyState();
+      persist(true);
+    }
+  }catch(e){
+    console.error('Load failed:', e);
+    state = emptyState();
+    persist(true);
+  }
+
+  try{
+    const th = localStorage.getItem('command12-theme');
+    if(th === 'dark' || th === 'light') ui.theme = th;
+  }catch(e){}
+
+  document.body.setAttribute('data-theme', ui.theme);
+}
+
+function normalizeState(s){
+  const d = emptyState();
+  return {
+    ...d,
+    ...s,
+    subjects: Array.isArray(s.subjects) ? s.subjects : [],
+    chapters: Array.isArray(s.chapters) ? s.chapters : [],
+    lectures: Array.isArray(s.lectures) ? s.lectures : [],
+    sessions: Array.isArray(s.sessions) ? s.sessions : [],
+    tests: Array.isArray(s.tests) ? s.tests : [],
+    pyqs: Array.isArray(s.pyqs) ? s.pyqs : [],
+    revisions: Array.isArray(s.revisions) ? s.revisions : [],
+    plannerTasks: Array.isArray(s.plannerTasks) ? s.plannerTasks : [],
+    resources: Array.isArray(s.resources) ? s.resources : [],
+    goals: {...d.goals, ...(s.goals || {})},
+    settings: {...d.settings, ...(s.settings || {})},
+    habits: Array.isArray(s.habits) ? s.habits : []
+  };
+}
+
+function emptyState(){
+  // UNIVERSAL START: no sample subjects, chapters, or study records.
+  return {
+    subjects: [], chapters: [], lectures: [], sessions: [], tests: [], pyqs: [], revisions: [],
+    plannerTasks: [], resources: [],
+    goals: {dailyHours:6, weeklyHours:40, monthlyHours:160, dailyLectures:2, weeklyLectures:12, chaptersPerWeek:2, pyqsPerDay:15, testsPerWeek:2},
+    settings: {examDate_cbse:'', examDate_jee:''}, habits: []
+  };
+}
+
+function persist(immediate){
+  clearTimeout(saveTimer);
+
+  const doSave = ()=>{
+    try{
+      localStorage.setItem('command12-app-data', JSON.stringify(state));
+      localStorage.setItem('command12-last-saved', new Date().toISOString());
+      window.dispatchEvent(new CustomEvent('command12-data-saved'));
+    }catch(e){
+      console.error('Save failed:', e);
+      toast('Could not save data');
+    }
+  };
+
+  if(immediate) return doSave();
+  saveTimer = setTimeout(doSave, 250);
+}
+function markDirty(){ persist(false); render(); }
+
+/* ============================= RENDER SHELL ============================= */
+const NAV = [
+  {group:'Overview', items:[['dashboard','Dashboard','dashboard'],['analytics','Analytics','analytics'],['calendar','Calendar','calendar'],['habits','Habit Tracker','calendar']]},
+  {group:'Syllabus', items:[['subjects','Subjects','subjects'],['chapters','Chapters','chapters'],['lectures','Lectures','lectures']]},
+  {group:'Study', items:[['planner','Daily Planner','planner'],['sessions','Study Sessions','sessions'],['revision','Revision','revision']]},
+  {group:'Assessment', items:[['tests','Tests','tests'],['pyq','PYQs','pyq']]},
+  {group:'System', items:[['goals','Goals','goals'],['settings','Settings','settings']]},
+];
+function renderSidebar(){
+  let html = `<div class="brand"><span class="dot"></span>Command12<small>&nbsp;</small></div><div style="height:6px"></div>`;
+  html += `<div style="font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); padding:0 10px 8px;">UNIVERSAL STUDY CONTROL ROOM</div>`;
+  NAV.forEach(g=>{
+    html += `<div class="navgroup">${g.group}</div>`;
+    g.items.forEach(([id,label,icon])=>{
+      html += `<div class="navitem ${ui.page===id?'active':''}" onclick="setPage('${id}')">${ICONS[icon]}<span>${label}</span></div>`;
+    });
+  });
+  html += `<div style="margin-top:auto; padding:14px 10px 4px;">
+    <div class="smallmuted" style="display:flex; align-items:center; gap:6px;">${ICONS.fire}<b style="color:var(--amber); font-family:var(--font-mono)">${currentStreak()}</b> day streak</div>
+    <div class="smallmuted" style="margin-top:6px;">Level ${levelFromXP(totalXP())} · ${totalXP()} XP</div>
+  </div>`;
+  document.getElementById('sidebar').innerHTML = html;
+}
+function setPage(p){ ui.page = p; render(); window.scrollTo(0,0); }
+
+function lastSavedLabel(){
+  try{
+    const t=localStorage.getItem('command12-last-saved');
+    if(!t) return 'Auto-save ready';
+    return 'Last saved: '+new Date(t).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }catch(e){ return 'Auto-save ready'; }
+}
+function topbar(title, sub, actionsHtml){
+  return `<div class="topbar"><div><div class="pagetitle">${title}</div><div class="pagesub">${sub||''}</div></div><div class="topactions"><span id="saveStatus" class="smallmuted" title="Your changes are saved automatically in this browser">● ${lastSavedLabel()}</span>${actionsHtml||''}<button class="iconbtn" onclick="toggleTheme()">${ui.theme==='dark'?ICONS.sun:ICONS.moon}</button></div></div>`;
+}
+function toggleTheme(){
+  ui.theme = ui.theme==='dark'?'light':'dark';
+  document.body.setAttribute('data-theme',ui.theme);
+  try{ localStorage.setItem('command12-theme', ui.theme); }catch(e){}
+  render();
+}
+
+function pageFooter(){
+  return `<footer class="app-footer"><div class="footer-credit">
+    <span class="footer-dot"></span><span><b>RONAK</b> · CLASS 12 A · KV MATHURA CANTT</span>
+    <span class="footer-sep">|</span><span>MADE BY RONAK</span>
+  </div></footer>`;
+}
+function render(){
+  renderSidebar();
+  const m = document.getElementById('main');
+  const pages = {dashboard:pageDashboard, subjects:pageSubjects, subjectDetail:pageSubjectDetail, chapters:pageChapters, lectures:pageLectures,
+    planner:pagePlanner, habits:pageHabits, sessions:pageSessions, revision:pageRevision, tests:pageTests, pyq:pagePYQ,
+    calendar:pageCalendar, analytics:pageAnalytics, goals:pageGoals, settings:pageSettings};
+  m.innerHTML = (pages[ui.page]||pageDashboard)() + pageFooter();
+  attachChapterLongPress();
+  afterRenderHooks();
+}
+let afterRenderHooks = ()=>{};
+
+/* ============================= RING SVG HELPER ============================= */
+function ring(pct, size, color, label, value){
+  const r = size/2 - 8; const c = 2*Math.PI*r;
+  const off = c - (pct/100)*c;
+  return `<div class="ring-wrap">
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="9"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"
+        stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${size/2} ${size/2})" style="transition:stroke-dashoffset .6s;"/>
+      <text x="50%" y="47%" text-anchor="middle" fill="var(--ink)" font-family="JetBrains Mono" font-weight="700" font-size="${size*0.19}">${pct}%</text>
+      <text x="50%" y="64%" text-anchor="middle" fill="var(--ink-faint)" font-family="Inter" font-size="${size*0.075}">${value||''}</text>
+    </svg>
+    <div class="ring-label">${label}</div>
+  </div>`;
+}
+
+/* ============================= DASHBOARD ============================= */
+function pageDashboard(){
+  const overall = overallCompletion();
+  const activeSubjects = state.subjects.filter(s=>chaptersOf(s.id).length>0);
+  const completedSubjects = activeSubjects.filter(s=>subjectStats(s.id).pct>=100).length;
+  const activeTracks = [...new Set(activeSubjects.map(s=>(s.exam||'').trim()).filter(Boolean))];
+  const chs = state.chapters; const totalCh = chs.length;
+  const compCh = chs.filter(c=>c.status==='Completed').length;
+  const progCh = chs.filter(c=>c.status==='In Progress').length;
+  const notCh = chs.filter(c=>c.status==='Not Started').length;
+  const lecs = state.lectures; const lecDone = lecs.filter(l=>l.status==='Completed').length;
+  const totalHrs = Math.round(state.sessions.reduce((a,s)=>a+(s.duration||0),0)/6)/10;
+  const [wkStart,wkEnd] = weekBounds();
+  const weekHrs = Math.round(studyHoursBetween(wkStart,wkEnd)*10)/10;
+  const todayHrs = Math.round(studyHoursBetween(todayISO(),todayISO())*10)/10;
+  const monthStart = todayISO().slice(0,7)+'-01';
+  const monthHrs = Math.round(studyHoursBetween(monthStart, todayISO())*10)/10;
+  const upcomingTests = []; // no future test dates in sample; show recent as "recent tests"
+  const pendingTasks = state.plannerTasks.filter(t=>!t.done && t.date>=todayISO()).length;
+  const weakChapters = [...chs].filter(c=>c.status!=='Not Started').map(c=>({c, s: (()=>{const t=state.tests.filter(x=>x.chapterId===c.id); return t.length? t.reduce((a,x)=>a+x.marksObtained/x.maxMarks*100,0)/t.length : null;})()})).filter(x=>x.s!==null && x.s<65).sort((a,b)=>a.s-b.s).slice(0,4);
+  const strongChapters = [...chs].map(c=>({c, s: (()=>{const t=state.tests.filter(x=>x.chapterId===c.id); return t.length? t.reduce((a,x)=>a+x.marksObtained/x.maxMarks*100,0)/t.length : null;})()})).filter(x=>x.s!==null && x.s>=80).sort((a,b)=>b.s-a.s).slice(0,4);
+  const priorityList = [...chs].filter(c=>c.status!=='Completed').map(c=>({c, score:priorityScore(c)})).sort((a,b)=>b.score-a.score).slice(0,5);
+  const weekGoalPct = state.goals.weeklyHours? clamp(Math.round(weekHrs/state.goals.weeklyHours*100),0,999) : 0;
+
+  let html = topbar('Dashboard', `Mission control for your CBSE + JEE prep · ${new Date().toLocaleDateString('en-IN',{weekday:'long', day:'numeric', month:'long'})}`);
+
+  html += `<div class="card pad-lg" style="margin-bottom:16px;"><div class="section-title">Syllabus Completion</div>
+    <div style="display:flex; gap:36px; justify-content:center; flex-wrap:wrap; padding:6px 0 4px;">
+      ${ring(overall,150,'var(--accent)','Overall Syllabus')}
+      ${ring(activeSubjects.length ? Math.round(completedSubjects/activeSubjects.length*100) : 0,150,'var(--green)','Subjects Mastered')}
+      ${ring(activeTracks.length ? Math.min(100, activeTracks.length*20) : 0,150,'var(--amber)','Tracks Added')}
+    </div></div>`;
+
+  html += `<div class="grid g4" style="margin-bottom:16px;">
+    ${statCard('Total Chapters', totalCh, `${compCh} completed`)}
+    ${statCard('In Progress', progCh, `${notCh} not started`, 'var(--amber)')}
+    ${statCard('Lectures Completed', lecDone+' / '+lecs.length, `${lecs.length-lecDone} pending`, 'var(--cyan)')}
+    ${statCard('Total Study Hours', totalHrs+'h', `${weekHrs}h this week`, 'var(--green)')}
+  </div>`;
+
+  html += `<div class="grid g4" style="margin-bottom:16px;">
+    ${statCard("Today's Study", todayHrs+'h', `Target ${state.goals.dailyHours}h`, todayHrs>=state.goals.dailyHours?'var(--green)':'var(--red)')}
+    ${statCard('Weekly Target', weekGoalPct+'%', `${weekHrs}h / ${state.goals.weeklyHours}h`, 'var(--accent)')}
+    ${statCard('This Month', monthHrs+'h', 'hours logged', 'var(--cyan)')}
+    ${statCard('Pending Tasks', pendingTasks, 'in daily planner', 'var(--amber)')}
+  </div>`;
+
+  html += `<div class="grid g2" style="margin-bottom:16px;">
+    <div class="card">
+      <div class="section-title">What Should I Study Next? <span class="pill blue">Smart Priority</span></div>
+      ${priorityList.map((p,i)=>`<div class="priority-item"><div class="priority-rank">${i+1}</div>
+        <div style="flex:1;"><div style="font-weight:600; font-size:13px;"><span class="subj-dot" style="background:${subjectColor(p.c.subjectId)}"></span>${p.c.name}</div>
+        <div class="smallmuted">${subjectById(p.c.subjectId)?.name} · ${chapterCompletion(p.c)}% done · ${p.c.priority} priority</div></div>
+        <div class="pill ${p.score>60?'red':p.score>35?'amber':'gray'}">Urgency ${p.score}</div></div>`).join('') || `<div class="empty">All caught up 🎉</div>`}
+    </div>
+    <div class="card">
+      <div class="section-title">Weak vs Strong Chapters</div>
+      <div style="font-size:11.5px; font-weight:700; color:var(--red); text-transform:uppercase; margin-bottom:8px;">Needs Attention</div>
+      ${weakChapters.map(w=>`<div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px;"><span>${w.c.name}</span><span class="pill red">${Math.round(w.s)}%</span></div>`).join('') || '<div class="smallmuted" style="padding:6px 0 14px;">No weak chapters flagged yet.</div>'}
+      <div style="font-size:11.5px; font-weight:700; color:var(--green); text-transform:uppercase; margin:14px 0 8px;">Strong Chapters</div>
+      ${strongChapters.map(w=>`<div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px;"><span>${w.c.name}</span><span class="pill green">${Math.round(w.s)}%</span></div>`).join('') || '<div class="smallmuted" style="padding:6px 0;">Keep testing to surface strengths.</div>'}
+    </div>
+  </div>`;
+
+  html += `<div class="grid g2">
+    <div class="card"><div class="section-title">Weekly Study Activity</div><canvas id="chartWeekly" height="180"></canvas></div>
+    <div class="card"><div class="section-title">Subject-wise Completion</div><canvas id="chartSubjDonut" height="180"></canvas></div>
+  </div>`;
+
+  afterRenderHooks = ()=>{
+    drawWeeklyBarChart('chartWeekly');
+    drawSubjectDonut('chartSubjDonut');
+  };
+  return html;
+}
+function statCard(label, value, delta, color){
+  return `<div class="card stat-card"><div class="stat-label">${label}</div><div class="stat-value" style="${color?`color:${color}`:''}">${value}</div><div class="stat-delta">${delta||''}</div></div>`;
+}
+
+let chartRegistry = {};
+function destroyChart(id){ if(chartRegistry[id]){ chartRegistry[id].destroy(); delete chartRegistry[id]; } }
+function chartColors(){
+  const dark = ui.theme==='dark';
+  return {grid: dark?'#232C42':'#E4E1D8', text: dark?'#8892AB':'#6B6D76'};
+}
+function drawWeeklyBarChart(canvasId){
+  const el = document.getElementById(canvasId); if(!el) return;
+  destroyChart(canvasId);
+  const labels=[], planned=[], actual=[];
+  for(let i=6;i>=0;i--){ const d=daysAgoISO(i); labels.push(new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short'}));
+    planned.push(state.goals.dailyHours); actual.push(Math.round(studyHoursBetween(d,d)*10)/10); }
+  const cc = chartColors();
+  chartRegistry[canvasId] = new Chart(el, {type:'bar', data:{labels, datasets:[
+    {label:'Planned', data:planned, backgroundColor: cc.grid, borderRadius:5, barPercentage:.55},
+    {label:'Actual', data:actual, backgroundColor:'#7C6CF6', borderRadius:5, barPercentage:.55}
+  ]}, options:{responsive:true, plugins:{legend:{labels:{color:cc.text, font:{size:11}}}}, scales:{
+    x:{ticks:{color:cc.text}, grid:{display:false}}, y:{ticks:{color:cc.text}, grid:{color:cc.grid}}}}});
+}
+function drawSubjectDonut(canvasId){
+  const el = document.getElementById(canvasId); if(!el) return;
+  destroyChart(canvasId);
+  const subs = state.subjects.filter(s=>chaptersOf(s.id).length>0);
+  const data = subs.map(s=>subjectStats(s.id).pct);
+  const cc = chartColors();
+  chartRegistry[canvasId] = new Chart(el, {type:'doughnut', data:{labels:subs.map(s=>s.name), datasets:[{data, backgroundColor:subs.map(s=>SUBJECT_COLORS[s.name]||'#888'), borderWidth:0}]},
+    options:{responsive:true, cutout:'68%', plugins:{legend:{position:'bottom', labels:{color:cc.text, font:{size:11}, boxWidth:10}}}}});
+}
+
+/* ============================= SUBJECTS ============================= */
+function pageSubjects(){
+  let html = topbar('Subjects', 'Build your own syllabus — nothing is pre-loaded', `<button class="btn" onclick="openSubjectModal()">${ICONS.plus} Add Subject</button>`);
+  html += `<div class="card" style="margin-bottom:18px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(135deg,var(--surface),var(--surface2));">
+    <div><b style="font-family:var(--font-display);font-size:15px;">Your Subjects</b><div class="smallmuted" style="margin-top:3px;">${state.subjects.length} added · Select from PCM, PCB, Commerce, Arts, Languages, IT or create your own.</div></div>
+    <button class="btn secondary" onclick="openSubjectPicker()">Browse Subject Library</button>
+  </div>`;
+  if(state.subjects.length){
+    html += `<div class="grid g3">`;
+    state.subjects.forEach(s=>{
+      const st=subjectStats(s.id), accent=s.color||colorForSubject(s.name);
+      html += `<div class="subject-card" onclick="openSubject('${s.id}')" title="Open ${s.name}">
+        <div class="subject-accent" style="background:${accent}"></div>
+        <div class="subject-head">
+          <div><div class="subject-name"><span class="subj-dot" style="background:${accent}"></span>${s.name}</div><div class="smallmuted" style="margin-top:5px;">${s.exam||'Personal study subject'}</div></div>
+          <div class="subject-actions" onclick="event.stopPropagation()">
+            <button class="icon-action" type="button" title="Edit Subject" onclick="editSubjectDirect('${s.id}')">${ICONS.edit}</button>
+            <button class="icon-action danger-icon" type="button" title="Delete Subject" onclick="deleteSubjectDirect('${s.id}')">${ICONS.trash}</button>
+          </div>
+        </div>
+        <div style="margin:20px 0 7px;display:flex;justify-content:space-between;font-size:12px;"><span class="smallmuted">Overall progress</span><b>${st.pct}%</b></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${st.pct}%;background:${accent}"></div></div>
+        <div class="grid g2" style="margin-top:16px;gap:8px;">
+          <div class="smallmuted">Chapters<br><b style="color:var(--ink);font-family:var(--font-mono)">${st.completed}/${st.total}</b></div>
+          <div class="smallmuted">Lectures<br><b style="color:var(--ink);font-family:var(--font-mono)">${st.lecDone}/${st.totalLec}</b></div>
+          <div class="smallmuted">Study Hours<br><b style="color:var(--ink);font-family:var(--font-mono)">${st.hrs}h</b></div>
+          <div class="smallmuted">Avg Score<br><b style="color:var(--ink);font-family:var(--font-mono)">${st.avgScore!==null?st.avgScore+'%':'—'}</b></div>
+        </div>
+        <div class="subject-open"><span>Open subject & chapters</span><span style="font-size:17px;">→</span></div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<div class="card empty" style="margin-top:8px;padding:68px 20px;border-radius:20px;background:linear-gradient(145deg,var(--surface),var(--surface2));">
+      <div style="font-size:42px;margin-bottom:12px;">📚</div>
+      <div style="font-family:var(--font-display);font-size:21px;font-weight:700;color:var(--ink);margin-bottom:7px;">Start with your subjects</div>
+      <div style="max-width:560px;margin:0 auto 20px;line-height:1.6;">Your app is completely empty by design. Pick subjects from the library or add a custom one. Nothing gets added automatically.</div>
+      <button class="btn" onclick="openSubjectPicker()">${ICONS.plus} Choose Subjects</button>
+    </div>`;
+  }
+  return html;
+}
+
+function editSubjectDirect(id){
+  const s=subjectById(id);
+  if(!s){ toast('Subject not found'); return; }
+  openSubjectModal(id);
+}
+
+function deleteSubjectDirect(id){
+  const s=subjectById(id);
+  if(!s){ toast('Subject not found'); return; }
+  const chapterIds=state.chapters.filter(c=>c.subjectId===id).map(c=>c.id);
+  if(!window.confirm(`Delete \"${s.name}\" and all its chapters, lectures and related data?`)) return;
+  state.lectures=state.lectures.filter(x=>!chapterIds.includes(x.chapterId));
+  state.revisions=state.revisions.filter(x=>!chapterIds.includes(x.chapterId));
+  state.tests=state.tests.filter(x=>!chapterIds.includes(x.chapterId));
+  state.pyqs=state.pyqs.filter(x=>!chapterIds.includes(x.chapterId));
+  state.chapters=state.chapters.filter(x=>x.subjectId!==id);
+  state.sessions=state.sessions.filter(x=>x.subjectId!==id);
+  state.subjects=state.subjects.filter(x=>x.id!==id);
+  ui.subjectDetail=null;
+  ui.page='subjects';
+  persist(true);
+  render();
+  toast(`\"${s.name}\" deleted`);
+}
+
+function openSubjectActions(id){
+  const s=subjectById(id); if(!s) return;
+  showModal('Subject Actions', `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><span class="subj-dot" style="background:${s.color||colorForSubject(s.name)}"></span><div><b style="font-family:var(--font-display);font-size:18px;">${s.name}</b><div class="smallmuted">${s.exam||'Personal study subject'}</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button class="btn secondary" type="button" onclick="closeModal();openSubjectModal('${id}')">✏️ Edit</button>
+      <button class="btn secondary" type="button" onclick="closeModal();openSubject('${id}')">📖 Open</button>
+      <button class="btn danger" type="button" style="grid-column:1/-1" onclick="closeModal();deleteSubject('${id}')">${ICONS.trash} Delete Subject & Its Data</button>
+    </div>`, ()=>closeModal());
+}
+
+function openSubjectModal(id){
+  if(id){
+    const s = subjectById(id) || {name:'', exam:'', color:'#7C6CF6'};
+    showModal('Edit Subject', `
+      <div class="field"><label>Subject Name</label><input id="f_name" maxlength="80" value="${s.name||''}"></div>
+      <div class="field"><label>Board / Exam / Track</label><input id="f_exam" maxlength="80" placeholder="CBSE, ISC, State Board, JEE, CUET..." value="${s.exam||''}"></div>
+      <div class="field"><label>Subject Color</label><input id="f_color" type="color" value="${s.color||'#7C6CF6'}" style="height:42px;padding:4px;cursor:pointer;"></div>
+    `, ()=>{
+      const name=document.getElementById('f_name').value.trim(); if(!name){toast('Please enter a subject name');return;}
+      Object.assign(s,{name,exam:document.getElementById('f_exam').value.trim(),color:document.getElementById('f_color').value||'#7C6CF6'});
+      closeModal(); markDirty();
+    });
+    return;
+  }
+  openSubjectPicker();
+}
+
+function openSubjectPicker(){
+  const groups = Object.entries(SUBJECT_LIBRARY).map(([group,items])=>`
+    <div class="subject-picker-group"><div class="section-title" style="margin:0 0 10px;">${group}</div>
+      <div class="picker-grid">${items.map(name=>{const checked=state.subjects.some(s=>s.name.toLowerCase()===name.toLowerCase());return `<label class="picker-item"><input type="checkbox" class="subject-pick" value="${name}" ${checked?'checked':''}><span>${name}</span></label>`}).join('')}</div>
+    </div>`).join('');
+  showModal('Choose Subjects', `
+    <div class="subject-picker-toolbar"><span class="smallmuted">Library options only — nothing is added until you save.</span><b id="subjectPickCount">${state.subjects.length} added</b></div>
+    <div style="max-height:430px;overflow:auto;padding-right:3px;">${groups}</div>
+    <div class="card" style="margin-top:12px;padding:13px;border-radius:14px;"><div class="section-title" style="margin-bottom:8px;">Custom Subject</div><input id="custom_subject" placeholder="e.g. Psychology, JEE Advanced, Urdu Literature"></div>
+  `, ()=>{
+    const names=[...document.querySelectorAll('.subject-pick:checked')].map(x=>x.value);
+    const custom=document.getElementById('custom_subject').value.trim(); if(custom) names.push(custom);
+    const existing=new Set(state.subjects.map(s=>s.name.toLowerCase()));
+    let added=0; names.forEach(name=>{if(existing.has(name.toLowerCase()))return;state.subjects.push({id:'sub_'+uid(),name,exam:'',color:colorForSubject(name)});existing.add(name.toLowerCase());added++;});
+    closeModal(); markDirty(); toast(added?`${added} subject${added===1?'':'s'} added`:'No new subjects selected');
+  }, true);
+}
+
+function colorForSubject(name){
+  const palette=['#7C6CF6','#33C481','#F5A623','#3FC6E0','#F0555A','#C084FC','#E07A5F','#4D96FF','#2EC4B6','#FF6B6B'];
+  let n=0; for(let i=0;i<name.length;i++) n=(n*31+name.charCodeAt(i))>>>0;
+  return palette[n%palette.length];
+}
+
+function deleteSubject(id){
+  if(!confirm('Delete this subject and all its chapters/lectures?')) return;
+  state.chapters.filter(c=>c.subjectId===id).forEach(c=>{
+    state.lectures = state.lectures.filter(l=>l.chapterId!==c.id);
+    state.revisions = state.revisions.filter(r=>r.chapterId!==c.id);
+    state.tests = state.tests.filter(t=>t.chapterId!==c.id);
+    state.pyqs = state.pyqs.filter(p=>p.chapterId!==c.id);
+  });
+  state.chapters = state.chapters.filter(c=>c.subjectId!==id);
+  state.sessions = state.sessions.filter(s=>s.subjectId!==id);
+  state.subjects = state.subjects.filter(s=>s.id!==id);
+  if(ui.subjectDetail===id) ui.subjectDetail=null;
+  ui.page='subjects';
+  markDirty();
+  toast('Subject deleted');
+}
+
+function openSubject(id){ ui.subjectDetail=id; ui.page='subjectDetail'; render(); window.scrollTo(0,0); }
+
+function pageSubjectDetail(){
+  const sub = subjectById(ui.subjectDetail);
+  if(!sub){ ui.page='subjects'; return pageSubjects(); }
+  afterRenderHooks = attachChapterLongPress;
+  const chs = chaptersOf(sub.id).slice().sort((a,b)=>(a.number||0)-(b.number||0));
+  const st = subjectStats(sub.id);
+  let html = topbar(sub.name, `${sub.exam||'Custom Subject'} · ${chs.length} chapter${chs.length===1?'':'s'}`, `<button class="btn secondary" onclick="setPage('subjects')">← Back</button><button class="btn" onclick="openChapterModalForSubject('${sub.id}')">${ICONS.plus} Add Chapter</button>`);
+  html += `<div class="card" style="margin-bottom:16px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;"><div><div class="section-title" style="margin:0;">${st.completed}/${st.total} Chapters Completed</div><div class="smallmuted" style="margin-top:4px;">Tap a chapter to open its checklist. <b>Hold a chapter</b> to edit, set priority, or delete it.</div></div><div style="min-width:180px;"><div class="progress-bar"><div class="progress-fill" style="width:${st.pct}%;background:${sub.color||'#7C6CF6'}"></div></div><div class="smallmuted" style="text-align:right;margin-top:5px;">${st.pct}%</div></div></div></div>`;
+  if(!chs.length){
+    html += `<div class="card empty" style="padding:56px 20px;"><div style="font-size:34px;margin-bottom:10px;">📖</div><div style="font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px;">No chapters yet</div><div style="margin-bottom:16px;">Add your first chapter to start tracking this subject.</div><button class="btn" onclick="openChapterModalForSubject('${sub.id}')">${ICONS.plus} Add Chapter</button></div>`;
+    return html;
+  }
+  html += `<div class="grid g2">`;
+  chs.forEach(c=>{
+    const pct=chapterCompletion(c);
+    html += `<div class="card chapter-card" data-chapter-id="${c.id}" style="cursor:pointer; user-select:none; position:relative;" title="Click: checklist · Hold: edit/delete/priority">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;"><div><div class="smallmuted" style="font-family:var(--font-mono);">CHAPTER ${c.number||''}</div><div style="font-family:var(--font-display);font-weight:700;font-size:16px;margin-top:3px;">${c.name}</div></div><div>${priorityPill(c.priority)}</div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;"><span>${statusPill(c.status)}</span><span class="smallmuted">${pct}%</span></div>
+      <div class="progress-bar" style="margin-top:7px;"><div class="progress-fill" style="width:${pct}%;background:${sub.color||'#7C6CF6'}"></div></div>
+      <div class="smallmuted" style="margin-top:12px;">Click for checklist · Hold for actions</div>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function openChapterModalForSubject(subjectId){ ui.chapterPresetSubject=subjectId; openChapterModal(); }
+
+function openChapterQuickMenu(id){
+  const c=chapterById(id); if(!c) return;
+  showModal(`Chapter Actions`, `
+    <div style="padding:4px 0 10px;"><div class="smallmuted">Chapter</div><div style="font-family:var(--font-display);font-size:18px;font-weight:700;margin-top:4px;">${c.name}</div></div>
+    <div class="field"><label>Chapter Name</label><input id="quick_name" value="${c.name}"></div>
+    <div class="field"><label>Priority</label><select id="quick_priority">${['Low','Medium','High','Very High'].map(v=>`<option ${c.priority===v?'selected':''}>${v}</option>`).join('')}</select></div>
+    <div style="display:flex;gap:8px;margin-top:8px;"><button class="btn secondary" type="button" onclick="closeModal();openChecklistModal('${c.id}')">📋 Checklist</button><button class="btn danger" type="button" onclick="closeModal();deleteChapter('${c.id}')">${ICONS.trash} Delete</button></div>
+  `, ()=>{ const name=document.getElementById('quick_name').value.trim(); if(!name){toast('Chapter name cannot be empty');return;} c.name=name; c.priority=document.getElementById('quick_priority').value; closeModal(); markDirty(); });
+}
+
+function attachChapterLongPress(){
+  document.querySelectorAll('.chapter-card[data-chapter-id]').forEach(el=>{
+    let timer=null, fired=false;
+    const start=()=>{ fired=false; clearTimeout(timer); timer=setTimeout(()=>{ fired=true; openChapterQuickMenu(el.dataset.chapterId); },650); };
+    const cancel=()=>clearTimeout(timer);
+    el.addEventListener('pointerdown',start); el.addEventListener('pointerup',()=>{ const was=fired; cancel(); if(!was) openChecklistModal(el.dataset.chapterId); });
+    el.addEventListener('pointerleave',cancel); el.addEventListener('pointercancel',cancel);
+    el.addEventListener('contextmenu',e=>{e.preventDefault();cancel();openChapterQuickMenu(el.dataset.chapterId);});
+  });
+}
+
+function openChapterChooserGlobal(){
+  if(!state.subjects.length){toast('Add a subject first'); openSubjectPicker(); return;}
+  const opts=state.subjects.map(s=>`<button class="btn secondary" style="justify-content:flex-start;" onclick="closeModal();openChapterPicker('${s.id}')">${s.name}</button>`).join('');
+  showModal('Choose Subject for Chapters', `<div class="smallmuted" style="margin-bottom:12px;">Pick the subject whose chapters you want to add.</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">${opts}</div>` , ()=>closeModal(), true);
+}
+
+/* ============================= CHAPTERS ============================= */
+function pageChapters(){
+  const f = ui.chapterFilter;
+  let html = topbar('Chapters', 'Track every chapter with a 16-point checklist', `<button class="btn" onclick="openChapterChooserGlobal()">${ICONS.plus} Add Chapter</button>`);
+  html += `<div class="filterbar">
+    <div class="searchbox">${ICONS.search}<input placeholder="Search chapters..." oninput="ui.chapterFilter.q=this.value; render()" value="${f.q||''}"></div>
+    <select onchange="ui.chapterFilter.subject=this.value; render()"><option value="">All Subjects</option>${state.subjects.map(s=>`<option value="${s.id}" ${f.subject===s.id?'selected':''}>${s.name}</option>`).join('')}</select>
+    <select onchange="ui.chapterFilter.status=this.value; render()"><option value="">All Status</option>${['Not Started','In Progress','Completed','Revision'].map(v=>`<option ${f.status===v?'selected':''}>${v}</option>`).join('')}</select>
+    <select onchange="ui.chapterFilter.priority=this.value; render()"><option value="">All Priority</option>${['Low','Medium','High','Very High'].map(v=>`<option ${f.priority===v?'selected':''}>${v}</option>`).join('')}</select>
+  </div>`;
+  let chs = state.chapters;
+  if(f.q) chs = chs.filter(c=>c.name.toLowerCase().includes(f.q.toLowerCase()));
+  if(f.subject) chs = chs.filter(c=>c.subjectId===f.subject);
+  if(f.status) chs = chs.filter(c=>c.status===f.status);
+  if(f.priority) chs = chs.filter(c=>c.priority===f.priority);
+  html += `<div class="card" style="padding:0;"><table><thead><tr><th>Chapter</th><th>Subject</th><th>Status</th><th>Priority</th><th>Difficulty</th><th>Progress</th><th>Target</th><th></th></tr></thead><tbody>`;
+  chs.forEach(c=>{
+    const pct = chapterCompletion(c);
+    html += `<tr class="rowhover"><td><b>${c.number}. ${c.name}</b></td>
+      <td><span class="subj-dot" style="background:${subjectColor(c.subjectId)}"></span>${subjectById(c.subjectId)?.name||'—'}</td>
+      <td>${statusPill(c.status)}</td><td>${priorityPill(c.priority)}</td><td>${c.difficulty}</td>
+      <td><div style="display:flex; align-items:center; gap:8px;"><div class="progress-bar" style="width:80px;"><div class="progress-fill" style="width:${pct}%"></div></div><span class="smallmuted">${pct}%</span></div></td>
+      <td class="smallmuted">${fmtDate(c.targetDate)}</td>
+      <td><div style="display:flex; gap:2px;"><button class="icon-action" onclick="openChecklistModal('${c.id}')">📋</button><button class="icon-action" onclick="openChapterModal('${c.id}')">${ICONS.edit}</button><button class="icon-action" onclick="deleteChapter('${c.id}')">${ICONS.trash}</button></div></td></tr>`;
+  });
+  html += `</tbody></table>${chs.length===0?'<div class="empty">No chapters match your filters.</div>':''}</div>`;
+  return html;
+}
+function statusPill(s){ const map={'Not Started':'gray','In Progress':'amber','Completed':'green','Revision':'blue'}; return `<span class="pill ${map[s]||'gray'}">${s}</span>`; }
+function priorityPill(p){ const map={'Low':'gray','Medium':'blue','High':'amber','Very High':'red'}; return `<span class="pill ${map[p]||'gray'}">${p}</span>`; }
+
+function openChapterModal(id){
+  if(!id && ui.chapterPresetSubject){ openChapterPicker(ui.chapterPresetSubject); ui.chapterPresetSubject=''; return; }
+  const c = id ? chapterById(id) : {name:'', number:state.chapters.length+1, subjectId:state.subjects[0]?.id||'', status:'Not Started', priority:'Medium', difficulty:'Medium', targetDate:''};
+  const subjectOptions = state.subjects.map(s=>`<option value="${s.id}" ${c.subjectId===s.id?'selected':''}>${s.name}</option>`).join('');
+  showModal(`${id?'Edit':'Add'} Chapter`, `
+    <div class="field"><label>Chapter Name</label><input id="f_name" placeholder="e.g. Chapter 1 / Unit 1" value="${c.name||''}"></div>
+    <div class="fieldrow"><div class="field"><label>Subject</label><select id="f_subject">${subjectOptions}</select></div><div class="field"><label>Chapter No.</label><input id="f_num" type="number" value="${c.number||1}"></div></div>
+    <div class="fieldrow"><div class="field"><label>Status</label><select id="f_status">${['Not Started','In Progress','Completed','Revision'].map(v=>`<option ${c.status===v?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label>Priority</label><select id="f_priority">${['Low','Medium','High','Very High'].map(v=>`<option ${c.priority===v?'selected':''}>${v}</option>`).join('')}</select></div></div>
+    <div class="fieldrow"><div class="field"><label>Difficulty</label><select id="f_diff">${['Easy','Medium','Hard'].map(v=>`<option ${c.difficulty===v?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label>Target Date</label><input id="f_target" type="date" value="${c.targetDate||''}"></div></div>
+  `, ()=>{
+    const name=document.getElementById('f_name').value.trim(); if(!name){toast('Chapter name cannot be empty');return;}
+    const patch={name,number:+document.getElementById('f_num').value||1,subjectId:document.getElementById('f_subject').value,status:document.getElementById('f_status').value,priority:document.getElementById('f_priority').value,difficulty:document.getElementById('f_diff').value,targetDate:document.getElementById('f_target').value};
+    if(id) Object.assign(c,patch); else { const checklist={}; CHECKLIST_ITEMS.forEach(([k])=>checklist[k]=false); state.chapters.push({id:'ch_'+uid(),...patch,actualDate:'',checklist,notes:''}); }
+    closeModal(); markDirty();
+  });
+}
+
+function openChapterPicker(subjectId){
+  const sub=subjectById(subjectId); if(!sub){toast('Add a subject first');return;}
+  const options=libraryChapters(sub.name);
+  const body = options.length ? options.map((name,i)=>`<label class="picker-item"><input type="checkbox" class="chapter-pick" value="${name}"><span>${i+1}. ${name}</span></label>`).join('') : `<div class="empty" style="padding:24px 10px;">No built-in chapter list for <b>${sub.name}</b>. Add your own chapters below.</div>`;
+  showModal(`Add Chapters — ${sub.name}`, `
+    <div class="smallmuted" style="margin-bottom:12px;">Select chapters from the optional library. Only selected chapters will be added.</div>
+    <div class="picker-grid" style="max-height:420px;overflow:auto;">${body}</div>
+    <div class="card" style="margin-top:14px;padding:12px;"><div class="section-title">Custom Chapter</div><input id="custom_chapter" placeholder="e.g. Unit 1 / Chapter name"></div>
+  `, ()=>{
+    const names=[...document.querySelectorAll('.chapter-pick:checked')].map(x=>x.value);
+    const custom=document.getElementById('custom_chapter').value.trim(); if(custom) names.push(custom);
+    if(!names.length){toast('Select or enter at least one chapter');return;}
+    const existing=new Set(chaptersOf(subjectId).map(c=>c.name.toLowerCase())); let added=0;
+    names.forEach(name=>{ if(existing.has(name.toLowerCase())) return; const checklist={}; CHECKLIST_ITEMS.forEach(([k])=>checklist[k]=false); state.chapters.push({id:'ch_'+uid(),subjectId,name,number:chaptersOf(subjectId).length+1,status:'Not Started',priority:'Medium',difficulty:'Medium',targetDate:'',actualDate:'',checklist,notes:''}); existing.add(name.toLowerCase()); added++; });
+    closeModal(); markDirty(); toast(`${added} chapter${added===1?'':'s'} added`);
+  }, true);
+}
+
+function deleteChapter(id){
+  if(!confirm('Delete this chapter and related data?')) return;
+  state.lectures = state.lectures.filter(l=>l.chapterId!==id);
+  state.revisions = state.revisions.filter(r=>r.chapterId!==id);
+  state.tests = state.tests.filter(t=>t.chapterId!==id);
+  state.pyqs = state.pyqs.filter(p=>p.chapterId!==id);
+  state.chapters = state.chapters.filter(c=>c.id!==id);
+  markDirty();
+}
+function openChecklistModal(id){
+  const c = chapterById(id);
+  showModal(`Checklist — ${c.name}`, `
+    <div class="checklist-grid">
+      ${CHECKLIST_ITEMS.map(([k,label])=>`<label class="chk-item"><input type="checkbox" id="chk_${k}" ${c.checklist[k]?'checked':''}><span>${label}</span></label>`).join('')}
+    </div>
+    <div class="field" style="margin-top:14px;"><label>Notes</label><textarea id="f_notes" rows="2">${c.notes||''}</textarea></div>
+    <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;"><span class="smallmuted">Overall completion updates automatically</span><span class="pill blue" id="livePct">${chapterCompletion(c)}%</span></div>
+  `, ()=>{
+    CHECKLIST_ITEMS.forEach(([k])=>{ c.checklist[k] = document.getElementById('chk_'+k).checked; });
+    c.notes = document.getElementById('f_notes').value;
+    if(chapterCompletion(c)===100 && c.status!=='Revision') c.status='Completed';
+    closeModal(); markDirty();
+  }, true);
+  CHECKLIST_ITEMS.forEach(([k])=>{
+    document.getElementById('chk_'+k).addEventListener('change', ()=>{
+      let done=0; CHECKLIST_ITEMS.forEach(([kk])=>{ if(document.getElementById('chk_'+kk).checked) done++; });
+      document.getElementById('livePct').textContent = Math.round(done/CHECKLIST_ITEMS.length*100)+'%';
+    });
+  });
+}
+
+function openLectureChooser(){
+  if(!state.subjects.length){toast('Add a subject first'); openSubjectPicker(); return;}
+  const opts=state.subjects.map(s=>`<button class="btn secondary" style="justify-content:flex-start;" onclick="closeModal();openLectureModalForSubject('${s.id}')">${s.name}</button>`).join('');
+  showModal('Choose Subject for Lecture', `<div class="smallmuted" style="margin-bottom:12px;">Choose a subject first, then select one of its chapters.</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">${opts}</div>`, ()=>closeModal(), true);
+}
+function openLectureModalForSubject(subjectId){
+  if(!chaptersOf(subjectId).length){ closeModal(); openChapterPicker(subjectId); return; }
+  openLectureModal('',subjectId);
+}
+
+/* ============================= LECTURES ============================= */
+function pageLectures(){
+  const lecs = state.lectures;
+  const totalHrs = lecs.reduce((a,l)=>a+l.duration,0)/60;
+  const doneHrs = lecs.filter(l=>l.status==='Completed').reduce((a,l)=>a+l.duration,0)/60;
+  const pendingLecs = lecs.filter(l=>l.status!=='Completed');
+  const pendingHrs = pendingLecs.reduce((a,l)=>a+l.duration,0)/60;
+  const avgDur = lecs.length? lecs.reduce((a,l)=>a+l.duration,0)/lecs.length : 45;
+
+  let html = topbar('Lecture Tracker', 'Watch progress, backlog, and pacing', `<button class="btn" onclick="openLectureChooser()">${ICONS.plus} Add Lecture</button>`);
+  html += `<div class="grid g4" style="margin-bottom:16px;">
+    ${statCard('Total Lectures', lecs.length, Math.round(totalHrs)+'h total')}
+    ${statCard('Completed', lecs.length-pendingLecs.length, Math.round(doneHrs)+'h watched','var(--green)')}
+    ${statCard('Pending', pendingLecs.length, Math.round(pendingHrs)+'h remaining','var(--amber)')}
+    ${statCard('Avg Duration', Math.round(avgDur)+' min', 'per lecture')}
+  </div>`;
+
+  html += `<div class="card" style="margin-bottom:16px;"><div class="section-title">Backlog Calculator</div>
+    <div class="fieldrow" style="align-items:end;">
+      <div class="field" style="margin-bottom:0;"><label>Pending Lectures</label><input value="${pendingLecs.length}" disabled></div>
+      <div class="field" style="margin-bottom:0;"><label>Deadline</label><input id="backlogDeadline" type="date" value="${daysFromNowISO(30)}" oninput="updateBacklog()"></div>
+    </div>
+    <div id="backlogResult" style="margin-top:14px; display:flex; gap:26px; flex-wrap:wrap;"></div>
+  </div>`;
+
+  html += `<div class="filterbar">
+    <select onchange="ui.lectureFilter.subject=this.value; render()"><option value="">All Subjects</option>${state.subjects.map(s=>`<option value="${s.id}" ${ui.lectureFilter.subject===s.id?'selected':''}>${s.name}</option>`).join('')}</select>
+    <select onchange="ui.lectureFilter.status=this.value; render()"><option value="">All Status</option>${['Not Started','Watching','Completed'].map(v=>`<option ${ui.lectureFilter.status===v?'selected':''}>${v}</option>`).join('')}</select>
+  </div>`;
+  let filtered = lecs;
+  if(ui.lectureFilter.subject) filtered = filtered.filter(l=>l.subjectId===ui.lectureFilter.subject);
+  if(ui.lectureFilter.status) filtered = filtered.filter(l=>l.status===ui.lectureFilter.status);
+  html += `<div class="card" style="padding:0;"><table><thead><tr><th>#</th><th>Title</th><th>Subject / Chapter</th><th>Teacher</th><th>Duration</th><th>Status</th><th></th></tr></thead><tbody>`;
+  filtered.slice(0,80).forEach(l=>{
+    const ch = chapterById(l.chapterId);
+    html += `<tr class="rowhover"><td class="smallmuted">${l.number}</td><td>${l.title}</td>
+      <td><span class="subj-dot" style="background:${subjectColor(l.subjectId)}"></span>${subjectById(l.subjectId)?.name} <span class="smallmuted">· ${ch?ch.name:'—'}</span></td>
+      <td class="smallmuted">${l.teacher}</td><td class="smallmuted">${l.duration} min</td>
+      <td><select onchange="cycleLectureStatus('${l.id}', this.value)" style="width:auto; padding:4px 8px; font-size:12px;">${['Not Started','Watching','Completed'].map(v=>`<option ${l.status===v?'selected':''}>${v}</option>`).join('')}</select></td>
+      <td><div style="display:flex; gap:2px;"><button class="icon-action" onclick="openLectureModal('${l.id}')">${ICONS.edit}</button><button class="icon-action" onclick="deleteLecture('${l.id}')">${ICONS.trash}</button></div></td></tr>`;
+  });
+  html += `</tbody></table>${filtered.length===0?'<div class="empty">No lectures found.</div>':''}</div>`;
+  afterRenderHooks = updateBacklog;
+  return html;
+}
+function updateBacklog(){
+  const el = document.getElementById('backlogResult'); if(!el) return;
+  const pending = state.lectures.filter(l=>l.status!=='Completed');
+  const avgDur = state.lectures.length? state.lectures.reduce((a,l)=>a+l.duration,0)/state.lectures.length : 45;
+  const backlogHrs = pending.length*avgDur/60;
+  const deadline = document.getElementById('backlogDeadline').value;
+  const daysLeft = Math.max(1, Math.ceil((new Date(deadline)-new Date(todayISO()))/(1000*60*60*24)));
+  const perDay = pending.length/daysLeft;
+  el.innerHTML = `
+    <div><div class="stat-label">Backlog Hours</div><div class="stat-value" style="font-size:20px;">${Math.round(backlogHrs*10)/10}h</div></div>
+    <div><div class="stat-label">Days Left</div><div class="stat-value" style="font-size:20px;">${daysLeft}</div></div>
+    <div><div class="stat-label">Lectures / Day Needed</div><div class="stat-value" style="font-size:20px; color:var(--accent)">${perDay.toFixed(1)}</div></div>
+    <div><div class="stat-label">Hours / Day Needed</div><div class="stat-value" style="font-size:20px; color:var(--accent)">${(perDay*avgDur/60).toFixed(1)}h</div></div>
+  `;
+}
+function cycleLectureStatus(id, val){ const l = state.lectures.find(x=>x.id===id); l.status=val; if(val==='Completed' && !l.watchDate) l.watchDate=todayISO(); markDirty(); }
+function openLectureModal(id, presetSubjectId){
+  const l = id? state.lectures.find(x=>x.id===id) : {subjectId:presetSubjectId||state.subjects[0]?.id, chapterId:'', number:1, title:'', teacher:'', platform:'', duration:45, status:'Not Started', speed:'1.25x', remarks:''};
+  const chapOptions = chaptersOf(l.subjectId).map(c=>`<option value="${c.id}" ${l.chapterId===c.id?'selected':''}>${c.name}</option>`).join('');
+  showModal(`${id?'Edit':'Add'} Lecture`, `
+    <div class="field"><label>Title</label><input id="f_title" value="${l.title}"></div>
+    <div class="fieldrow">
+      <div class="field"><label>Subject</label><select id="f_subject" onchange="reloadChapterOptions()">${state.subjects.map(s=>`<option value="${s.id}" ${l.subjectId===s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
+      <div class="field"><label>Chapter</label><select id="f_chapter">${chapOptions}</select></div>
+    </div>
+    <div class="fieldrow">
+      <div class="field"><label>Teacher</label><input id="f_teacher" value="${l.teacher}"></div>
+      <div class="field"><label>Platform</label><input id="f_platform" value="${l.platform}"></div>
+    </div>
+    <div class="fieldrow">
+      <div class="field"><label>Duration (min)</label><input id="f_duration" type="number" value="${l.duration}"></div>
+      <div class="field"><label>Status</label><select id="f_status">${['Not Started','Watching','Completed'].map(v=>`<option ${l.status===v?'selected':''}>${v}</option>`).join('')}</select></div>
+    </div>
+  `, ()=>{
+    const title = document.getElementById('f_title').value.trim(); if(!title) return;
+    const patch = {title, subjectId:document.getElementById('f_subject').value, chapterId:document.getElementById('f_chapter').value,
+      teacher:document.getElementById('f_teacher').value, platform:document.getElementById('f_platform').value,
+      duration:+document.getElementById('f_duration').value||30, status:document.getElementById('f_status').value};
+    if(id){ Object.assign(l,patch); } else { state.lectures.push({id:'lec_'+uid(), number: state.lectures.length+1, watchDate:'', notesCompleted:false, dppCompleted:false, speed:'1.25x', remarks:'', ...patch}); }
+    closeModal(); markDirty();
+  });
+  window.reloadChapterOptions = ()=>{
+    const sid = document.getElementById('f_subject').value;
+    document.getElementById('f_chapter').innerHTML = chaptersOf(sid).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  };
+}
+function deleteLecture(id){ state.lectures = state.lectures.filter(l=>l.id!==id); markDirty(); }
+
+/* ============================= STUDY SESSIONS ============================= */
+function pageSessions(){
+  const [wkStart,wkEnd] = weekBounds();
+  const today = studyHoursBetween(todayISO(),todayISO());
+  const week = studyHoursBetween(wkStart,wkEnd);
+  const monthStart = todayISO().slice(0,7)+'-01';
+  const month = studyHoursBetween(monthStart, todayISO());
+  let html = topbar('Study Sessions', 'Log every study block for accurate hour tracking', `<button class="btn" onclick="openSessionModal()">${ICONS.plus} Log Session</button>`);
+  html += `<div class="grid g3" style="margin-bottom:16px;">
+    ${statCard('Today', Math.round(today*10)/10+'h','')}
+    ${statCard('This Week', Math.round(week*10)/10+'h','')}
+    ${statCard('This Month', Math.round(month*10)/10+'h','')}
+  </div>`;
+  const sessions = [...state.sessions].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,60);
+  html += `<div class="card" style="padding:0;"><table><thead><tr><th>Date</th><th>Subject</th><th>Type</th><th>Duration</th><th>Rating</th><th></th></tr></thead><tbody>`;
+  sessions.forEach(s=>{
+    html += `<tr class="rowhover"><td class="smallmuted">${fmtDate(s.date)}</td><td><span class="subj-dot" style="background:${subjectColor(s.subjectId)}"></span>${subjectById(s.subjectId)?.name||'—'}</td>
+      <td>${s.type}</td><td class="smallmuted">${s.duration} min</td><td>${'★'.repeat(s.rating||0)}${'☆'.repeat(5-(s.rating||0))}</td>
+      <td><button class="icon-action" onclick="deleteSession('${s.id}')">${ICONS.trash}</button></td></tr>`;
+  });
+  html += `</tbody></table>${sessions.length===0?'<div class="empty">No sessions logged yet.</div>':''}</div>`;
+  return html;
+}
+function openSessionModal(){
+  const s0 = state.subjects[0];
+  showModal('Log Study Session', `
+    <div class="fieldrow">
+      <div class="field"><label>Date</label><input id="f_date" type="date" value="${todayISO()}"></div>
+      <div class="field"><label>Subject</label><select id="f_subject">${state.subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="fieldrow">
+      <div class="field"><label>Start</label><input id="f_start" type="time" value="17:00"></div>
+      <div class="field"><label>End</label><input id="f_end" type="time" value="18:00"></div>
+    </div>
+    <div class="fieldrow">
+      <div class="field"><label>Study Type</label><select id="f_type">${['Lecture','Revision','Questions','NCERT','PYQ','Test','Notes'].map(v=>`<option>${v}</option>`).join('')}</select></div>
+      <div class="field"><label>Productivity (1-5)</label><input id="f_rating" type="number" min="1" max="5" value="4"></div>
+    </div>
+    <div class="field"><label>Remarks</label><textarea id="f_remarks" rows="2"></textarea></div>
+  `, ()=>{
+    const start = document.getElementById('f_start').value, end = document.getElementById('f_end').value;
+    const [sh,sm]=start.split(':').map(Number), [eh,em]=end.split(':').map(Number);
+    let duration = (eh*60+em)-(sh*60+sm); if(duration<=0) duration=60;
+    state.sessions.push({id:'sess_'+uid(), date:document.getElementById('f_date').value, subjectId:document.getElementById('f_subject').value,
+      chapterId:'', start, end, duration, type:document.getElementById('f_type').value, rating:+document.getElementById('f_rating').value, remarks:document.getElementById('f_remarks').value});
+    closeModal(); markDirty();
+  });
+}
+function deleteSession(id){ state.sessions = state.sessions.filter(s=>s.id!==id); markDirty(); }
+
+/* ============================= DAILY PLANNER ============================= */
+function pagePlanner(){
+  const date = ui.plannerDate || todayISO();
+  const tasks = state.plannerTasks.filter(t=>t.date===date);
+  const done = tasks.filter(t=>t.done).length;
+  const pct = tasks.length? Math.round(done/tasks.length*100) : 0;
+  const actualMin = tasks.reduce((a,t)=>a+(t.done?t.estMin:t.actMin||0),0);
+  let html = topbar('Daily Planner', 'Plan today, track completion in real time', `<button class="btn" onclick="openTaskModal()">${ICONS.plus} Add Task</button>`);
+  html += `<div class="card" style="margin-bottom:16px; display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+    <input type="date" value="${date}" style="width:auto;" onchange="ui.plannerDate=this.value; render()">
+    <div style="flex:1; min-width:200px;"><div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;"><span class="smallmuted">Tasks Completed</span><b>${done}/${tasks.length}</b></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></div>
+    <div class="smallmuted">Target: <b style="color:var(--ink)">${state.goals.dailyHours}h</b> · Logged: <b style="color:var(--ink)">${Math.round(studyHoursBetween(date,date)*10)/10}h</b></div>
+  </div>`;
+  html += `<div class="card" style="padding:0;">`;
+  if(tasks.length===0){ html += `<div class="empty">No tasks planned for this day. Add one to get started.</div>`; }
+  else {
+    tasks.sort((a,b)=>(a.start||'').localeCompare(b.start||'')).forEach(t=>{
+      html += `<div style="display:flex; align-items:center; gap:12px; padding:13px 16px; border-bottom:1px solid var(--border);">
+        <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask('${t.id}')" style="width:17px;height:17px;">
+        <div style="flex:1; ${t.done?'opacity:.5; text-decoration:line-through;':''}">
+          <div style="font-weight:600; font-size:13.5px;">${t.title}</div>
+          <div class="smallmuted">${subjectById(t.subjectId)?.name||''} ${t.start?'· '+t.start+'–'+t.end:''} · Est ${t.estMin}min</div>
+        </div>
+        ${priorityPill(t.priority)}
+        <button class="icon-action" onclick="openTaskModal('${t.id}')">${ICONS.edit}</button>
+        <button class="icon-action" onclick="deleteTask('${t.id}')">${ICONS.trash}</button>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+  return html;
+}
+function toggleTask(id){ const t=state.plannerTasks.find(x=>x.id===id); t.done=!t.done; if(t.done) t.actMin=t.estMin; markDirty(); }
+function openTaskModal(id){
+  const t = id? state.plannerTasks.find(x=>x.id===id) : {date: ui.plannerDate||todayISO(), title:'', priority:'Medium', subjectId:state.subjects[0]?.id, chapterId:'', estMin:45, actMin:0, start:'17:00', end:'17:45', done:false};
+  showModal(`${id?'Edit':'Add'} Task`, `
+    <div class="field"><label>Task</label><input id="f_title" value="${t.title}"></div>
+    <div class="fieldrow">
+      <div class="field"><label>Subject</label><select id="f_subject">${state.subjects.map(s=>`<option value="${s.id}" ${t.subjectId===s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
+      <div class="field"><label>Priority</label><select id="f_priority">${['Low','Medium','High','Very High'].map(v=>`<option ${t.priority===v?'selected':''}>${v}</option>`).join('')}</select></div>
+    </div>
+    <div class="fieldrow">
+      <div class="field"><label>Start</label><input id="f_start" type="time" value="${t.start}"></div>
+      <div class="field"><label>End</label><input id="f_end" type="time" value="${t.end}"></div>
+    </div>
+    <div class="field"><label>Estimated Duration (min)</label><input id="f_est" type="number" value="${t.estMin}"></div>
+  `, ()=>{
+    const title = document.getElementById('f_title').value.trim(); if(!title) return;
+    const patch = {title, subjectId:document.getElementById('f_subject').value, priority:document.getElementById('f_priority').value,
+      start:document.getElementById('f_start').value, end:document.getElementById('f_end').value, estMin:+document.getElementById('f_est').value||30};
+    if(id){ Object.assign(t,patch); } else { state.plannerTasks.push({id:uid(), date: ui.plannerDate||todayISO(), chapterId:'', actMin:0, done:false, ...patch}); }
+    closeModal(); markDirty();
+  });
+}
+function deleteTask(id){ state.plannerTasks = state.plannerTasks.filter(t=>t.id!==id); markDirty(); }
+
+/* ============================= REVISION ============================= */
+function pageRevision(){
+  const revs = state.revisions;
+  const overdue = revs.filter(r=>r.status!=='Done' && r.dueDate<todayISO());
+  const today = revs.filter(r=>r.status!=='Done' && r.dueDate===todayISO());
+  const upcoming = revs.filter(r=>r.status!=='Done' && r.dueDate>todayISO()).sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).slice(0,8);
+  let html = topbar('Revision System', 'Spaced repetition tracker across all chapters');
+  html += `<div class="grid g3" style="margin-bottom:16px;">
+    ${statCard('Overdue', overdue.length, 'need attention','var(--red)')}
+    ${statCard('Due Today', today.length, '','var(--amber)')}
+    ${statCard('Upcoming', upcoming.length, 'next in queue','var(--accent)')}
+  </div>`;
+  const renderList = (title,list,color)=> `<div class="card" style="margin-bottom:16px;"><div class="section-title">${title}</div>
+    ${list.length===0?'<div class="smallmuted" style="padding:8px 0;">Nothing here.</div>':list.map(r=>{
+      const c = chapterById(r.chapterId); if(!c) return '';
+      return `<div style="display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border);">
+      <div><b style="font-size:13px;">${c.name}</b><div class="smallmuted">${subjectById(c.subjectId)?.name} · ${r.stage}</div></div>
+      <div style="display:flex; align-items:center; gap:10px;"><span class="smallmuted" style="color:${color}">${fmtDate(r.dueDate)}</span><button class="btn secondary" style="padding:5px 10px; font-size:11.5px;" onclick="markRevisionDone('${r.id}')">Mark Done</button></div></div>`;
+    }).join('')}
+  </div>`;
+  html += renderList('Overdue Revisions', overdue, 'var(--red)');
+  html += renderList('Due Today', today, 'var(--amber)');
+  html += renderList('Upcoming Revisions', upcoming, 'var(--ink-dim)');
+  return html;
+}
+function markRevisionDone(id){
+  const r = state.revisions.find(x=>x.id===id); r.status='Done'; r.doneDate=todayISO();
+  const stages=['R1','R2','R3','R4','Final']; const idx=stages.indexOf(r.stage);
+  if(idx>=0 && idx<stages.length-1){
+    state.revisions.push({id:'rev_'+uid(), chapterId:r.chapterId, stage:stages[idx+1], dueDate:daysFromNowISO(7*(idx+2)), status:'Pending'});
+  }
+  markDirty();
+}
+
+/* ============================= TESTS ============================= */
+function pageTests(){
+  const tests = state.tests;
+  const scores = tests.map(t=>t.marksObtained/t.maxMarks*100);
+  const avg = scores.length? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+  const best = scores.length? Math.round(Math.max(...scores)) : 0;
+  const worst = scores.length? Math.round(Math.min(...scores)) : 0;
+  let html = topbar('Test & Exam Tracker', 'Performance history and subject-wise analysis', `<button class="btn" onclick="openTestModal()">${ICONS.plus} Add Test</button>`);
+  html += `<div class="grid g3" style="margin-bottom:16px;">
+    ${statCard('Average Score', avg+'%','across '+tests.length+' tests')}
+    ${statCard('Best Score', best+'%','','var(--green)')}
+    ${statCard('Worst Score', worst+'%','','var(--red)')}
+  </div>`;
+  html += `<div class="card" style="margin-bottom:16px;"><div class="section-title">Score Trend</div><canvas id="chartTests" height="90"></canvas></div>`;
+  html += `<div class="card" style="padding:0;"><table><thead><tr><th>Test</th><th>Subject</th><th>Date</th><th>Score</th><th>Mistakes</th><th>Weak Topics</th><th></th></tr></thead><tbody>`;
+  [...tests].sort((a,b)=>b.date.localeCompare(a.date)).forEach(t=>{
+    const pct = Math.round(t.marksObtained/t.maxMarks*100);
+    html += `<tr class="rowhover"><td><b>${t.name}</b><div class="smallmuted">${t.type}</div></td>
+      <td><span class="subj-dot" style="background:${subjectColor(t.subjectId)}"></span>${subjectById(t.subjectId)?.name}</td>
+      <td class="smallmuted">${fmtDate(t.date)}</td>
+      <td><span class="pill ${pct>=80?'green':pct>=60?'amber':'red'}">${t.marksObtained}/${t.maxMarks} (${pct}%)</span></td>
+      <td class="smallmuted">${t.mistakes}</td><td class="smallmuted">${t.weakTopics||'—'}</td>
+      <td><button class="icon-action" onclick="deleteTest('${t.id}')">${ICONS.trash}</button></td></tr>`;
+  });
+  html += `</tbody></table>${tests.length===0?'<div class="empty">No tests recorded yet.</div>':''}</div>`;
+  afterRenderHooks = ()=>{
+    const el = document.getElementById('chartTests'); if(!el) return;
+    destroyChart('chartTests');
+    const sorted = [...tests].sort((a,b)=>a.date.localeCompare(b.date));
+    const cc = chartColors();
+    chartRegistry['chartTests'] = new Chart(el, {type:'line', data:{labels:sorted.map(t=>fmtDate(t.date)), datasets:[{label:'Score %', data:sorted.map(t=>Math.round(t.marksObtained/t.maxMarks*100)), borderColor:'#7C6CF6', backgroundColor:'#7C6CF633', fill:true, tension:.35}]},
+      options:{plugins:{legend:{display:false}}, scales:{x:{ticks:{color:cc.text}, grid:{display:false}}, y:{ticks:{color:cc.text}, grid:{color:cc.grid}}}}});
+  };
+  return html;
+}
+function openTestModal(){
+  showModal('Add Test', `
+    <div class="field"><label>Test Name</label><input id="f_name" placeholder="e.g. Electrostatics Chapter Test"></div>
+    <div class="fieldrow">
+      <div class="field"><label>Subject</label><select id="f_subject" onchange="reloadTestChapters()">${state.subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+      <div class="field"><label>Chapter</label><select id="f_chapter">${chaptersOf(state.subjects[0]?.id).map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+    </div>
+    <div class="fieldrow">
+      <div class="field"><label>Date</label><input id="f_date" type="date" value="${todayISO()}"></div>
+      <div class="field"><label>Type</label><select id="f_type">${['Chapter Test','Full Syllabus','Mock Test','JEE Mock','School Test'].map(v=>`<option>${v}</option>`).join('')}</select></div>
+    </div>
+    <div class="fieldrow">
+      <div class="field"><label>Max Marks</label><input id="f_max" type="number" value="100"></div>
+      <div class="field"><label>Marks Obtained</label><input id="f_obt" type="number" value="70"></div>
+    </div>
+    <div class="field"><label>Mistakes</label><input id="f_mistakes" type="number" value="0"></div>
+    <div class="field"><label>Weak Topics</label><input id="f_weak" placeholder="optional"></div>
+  `, ()=>{
+    const name = document.getElementById('f_name').value.trim(); if(!name) return;
+    state.tests.push({id:'test_'+uid(), name, subjectId:document.getElementById('f_subject').value, chapterId:document.getElementById('f_chapter').value,
+      type:document.getElementById('f_type').value, date:document.getElementById('f_date').value, maxMarks:+document.getElementById('f_max').value||100,
+      marksObtained:+document.getElementById('f_obt').value||0, timeTaken:'', mistakes:+document.getElementById('f_mistakes').value||0,
+      weakTopics:document.getElementById('f_weak').value, analysis:''});
+    closeModal(); markDirty();
+  });
+  window.reloadTestChapters = ()=>{
+    const sid = document.getElementById('f_subject').value;
+    document.getElementById('f_chapter').innerHTML = chaptersOf(sid).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  };
+}
+function deleteTest(id){ state.tests = state.tests.filter(t=>t.id!==id); markDirty(); }
+
+/* ============================= PYQ ============================= */
+function pagePYQ(){
+  const pyqs = state.pyqs;
+  const totalAttempted = pyqs.reduce((a,p)=>a+p.attempted,0);
+  const totalCorrect = pyqs.reduce((a,p)=>a+p.correct,0);
+  const totalQs = pyqs.reduce((a,p)=>a+p.total,0);
+  const accuracy = totalAttempted? Math.round(totalCorrect/totalAttempted*100) : 0;
+  let html = topbar('PYQ Tracker', 'Previous Year Questions, chapter by chapter', `<button class="btn" onclick="openPYQModal()">${ICONS.plus} Add PYQ Set</button>`);
+  html += `<div class="grid g4" style="margin-bottom:16px;">
+    ${statCard('Total PYQs', totalQs, '')}
+    ${statCard('Attempted', totalAttempted, `${totalQs-totalAttempted} remaining`)}
+    ${statCard('Accuracy', accuracy+'%', totalCorrect+' correct', accuracy>=70?'var(--green)':'var(--amber)')}
+    ${statCard('Sets Tracked', pyqs.length, '')}
+  </div>`;
+  html += `<div class="card" style="padding:0;"><table><thead><tr><th>Chapter</th><th>Total</th><th>Attempted</th><th>Correct</th><th>Incorrect</th><th>Skipped</th><th>Accuracy</th><th></th></tr></thead><tbody>`;
+  pyqs.forEach(p=>{
+    const ch = chapterById(p.chapterId); if(!ch) return;
+    const acc = p.attempted? Math.round(p.correct/p.attempted*100) : 0;
+    html += `<tr class="rowhover"><td><b>${ch.name}</b><div class="smallmuted">${subjectById(ch.subjectId)?.name}</div></td>
+      <td class="smallmuted">${p.total}</td><td class="smallmuted">${p.attempted}</td><td class="smallmuted">${p.correct}</td><td class="smallmuted">${p.incorrect}</td><td class="smallmuted">${p.skipped}</td>
+      <td><span class="pill ${acc>=70?'green':acc>=50?'amber':'red'}">${acc}%</span></td>
+      <td><button class="icon-action" onclick="deletePYQ('${p.id}')">${ICONS.trash}</button></td></tr>`;
+  });
+  html += `</tbody></table>${pyqs.length===0?'<div class="empty">No PYQ sets tracked yet.</div>':''}</div>`;
+  return html;
+}
+function openPYQModal(){
+  showModal('Add PYQ Set', `
+    <div class="field"><label>Chapter</label><select id="f_chapter">${state.chapters.map(c=>`<option value="${c.id}">${subjectById(c.subjectId)?.name} — ${c.name}</option>`).join('')}</select></div>
+    <div class="fieldrow"><div class="field"><label>Total PYQs</label><input id="f_total" type="number" value="20"></div><div class="field"><label>Attempted</label><input id="f_att" type="number" value="0"></div></div>
+    <div class="fieldrow"><div class="field"><label>Correct</label><input id="f_correct" type="number" value="0"></div><div class="field"><label>Incorrect</label><input id="f_incorrect" type="number" value="0"></div></div>
+    <div class="field"><label>Skipped</label><input id="f_skipped" type="number" value="0"></div>
+  `, ()=>{
+    const chapterId = document.getElementById('f_chapter').value;
+    state.pyqs.push({id:'pyq_'+uid(), chapterId, total:+document.getElementById('f_total').value||0, attempted:+document.getElementById('f_att').value||0,
+      correct:+document.getElementById('f_correct').value||0, incorrect:+document.getElementById('f_incorrect').value||0, skipped:+document.getElementById('f_skipped').value||0});
+    closeModal(); markDirty();
+  });
+}
+function deletePYQ(id){ state.pyqs = state.pyqs.filter(p=>p.id!==id); markDirty(); }
+
+/* ============================= CALENDAR / HEATMAP ============================= */
+function pageCalendar(){
+  let html = topbar('Calendar', 'Sessions, tests, deadlines and revisions in one view');
+  const year = ui.calYear, month = ui.calMonth;
+  const first = new Date(year, month, 1);
+  const startDay = (first.getDay()+6)%7;
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  html += `<div class="card" style="margin-bottom:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <button class="btn secondary" onclick="shiftMonth(-1)">←</button>
+      <div class="section-title" style="margin:0;">${first.toLocaleDateString('en-IN',{month:'long', year:'numeric'})}</div>
+      <button class="btn secondary" onclick="shiftMonth(1)">→</button>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px; font-size:11px; color:var(--ink-faint); text-align:center; margin-bottom:6px;">
+      ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div>${d}</div>`).join('')}
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px;">
+      ${Array(startDay).fill('<div></div>').join('')}
+      ${Array.from({length:daysInMonth},(_,i)=>{
+        const d=i+1; const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const hrs = studyHoursBetween(iso,iso);
+        const hasTest = state.tests.some(t=>t.date===iso);
+        const hasRevision = state.revisions.some(r=>r.dueDate===iso && r.status!=='Done');
+        const hasTarget = state.chapters.some(c=>c.targetDate===iso);
+        let bg = 'var(--surface2)';
+        if(hrs>=6) bg='var(--accent)'; else if(hrs>=4) bg='#7C6CF6bb'; else if(hrs>=2) bg='#7C6CF677'; else if(hrs>=1) bg='#7C6CF63a';
+        const isToday = iso===todayISO();
+        return `<div style="aspect-ratio:1; border-radius:8px; background:${bg}; border:1px solid ${isToday?'var(--accent)':'var(--border)'}; padding:5px; font-size:10.5px; position:relative; cursor:default;" title="${hrs.toFixed(1)}h studied">
+          <div style="font-family:var(--font-mono); font-weight:600; color:${hrs>=2?'#fff':'var(--ink-dim)'}">${d}</div>
+          <div style="position:absolute; bottom:4px; right:4px; display:flex; gap:2px;">
+            ${hasTest?'<div style="width:5px;height:5px;border-radius:50%;background:var(--red)"></div>':''}
+            ${hasRevision?'<div style="width:5px;height:5px;border-radius:50%;background:var(--amber)"></div>':''}
+            ${hasTarget?'<div style="width:5px;height:5px;border-radius:50%;background:var(--cyan)"></div>':''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex; gap:16px; margin-top:14px; font-size:11.5px; color:var(--ink-dim);">
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-right:4px;"></span>Test</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);margin-right:4px;"></span>Revision Due</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cyan);margin-right:4px;"></span>Chapter Target</span>
+    </div>
+  </div>`;
+
+  html += `<div class="card"><div class="section-title">Study Activity Heatmap (last 12 weeks) <span class="pill blue">${currentStreak()} day streak</span></div>
+    <div style="display:grid; grid-auto-flow:column; grid-template-rows:repeat(7,13px); gap:3px; overflow-x:auto; padding-bottom:6px;">
+      ${Array.from({length:84},(_,i)=>84-1-i).reverse().map(offset=>{
+        const iso = daysAgoISO(offset); const hrs = studyHoursBetween(iso,iso);
+        let bg='var(--surface2)'; if(hrs>=6) bg='var(--accent)'; else if(hrs>=4) bg='#7C6CF6bb'; else if(hrs>=2) bg='#7C6CF677'; else if(hrs>=1) bg='#7C6CF63a';
+        return `<div class="heat-cell" style="background:${bg}" title="${iso}: ${hrs.toFixed(1)}h"></div>`;
+      }).join('')}
+    </div>
+  </div>`;
+  return html;
+}
+function shiftMonth(delta){ ui.calMonth += delta; if(ui.calMonth<0){ui.calMonth=11; ui.calYear--;} if(ui.calMonth>11){ui.calMonth=0; ui.calYear++;} render(); }
+
+/* ============================= ANALYTICS ============================= */
+function pageAnalytics(){
+  let html = topbar('Analytics', 'Deep dive into study patterns and performance');
+  html += `<div class="grid g2" style="margin-bottom:16px;">
+    <div class="card"><div class="section-title">Daily Study Hours (30 days)</div><canvas id="an_daily" height="160"></canvas></div>
+    <div class="card"><div class="section-title">Monthly Study Hours</div><canvas id="an_monthly" height="160"></canvas></div>
+  </div>`;
+  html += `<div class="grid g2" style="margin-bottom:16px;">
+    <div class="card"><div class="section-title">Subject-wise Completion</div><canvas id="an_subj" height="160"></canvas></div>
+    <div class="card"><div class="section-title">Lecture Completion</div><canvas id="an_lec" height="160"></canvas></div>
+  </div>`;
+  html += `<div class="grid g2">
+    <div class="card"><div class="section-title">Planned vs Actual (7 days)</div><canvas id="an_pva" height="160"></canvas></div>
+    <div class="card"><div class="section-title">Revision & PYQ Completion</div><canvas id="an_rev" height="160"></canvas></div>
+  </div>`;
+  afterRenderHooks = ()=>{
+    const cc = chartColors();
+    // daily
+    let el = document.getElementById('an_daily'); destroyChart('an_daily');
+    const dLabels=[], dVals=[];
+    for(let i=29;i>=0;i--){ const d=daysAgoISO(i); dLabels.push(fmtDate(d)); dVals.push(Math.round(studyHoursBetween(d,d)*10)/10); }
+    chartRegistry['an_daily']=new Chart(el,{type:'bar',data:{labels:dLabels,datasets:[{data:dVals,backgroundColor:'#7C6CF6',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text,maxRotation:0,autoSkip:true,maxTicksLimit:10},grid:{display:false}},y:{ticks:{color:cc.text},grid:{color:cc.grid}}}}});
+    // monthly
+    el = document.getElementById('an_monthly'); destroyChart('an_monthly');
+    const mLabels=[], mVals=[];
+    for(let i=5;i>=0;i--){ const d=new Date(); d.setMonth(d.getMonth()-i); const ms=d.toISOString().slice(0,7); mLabels.push(d.toLocaleDateString('en-IN',{month:'short'}));
+      mVals.push(Math.round(state.sessions.filter(s=>s.date.startsWith(ms)).reduce((a,s)=>a+s.duration,0)/60*10)/10); }
+    chartRegistry['an_monthly']=new Chart(el,{type:'bar',data:{labels:mLabels,datasets:[{data:mVals,backgroundColor:'#33C481',borderRadius:5}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text},grid:{display:false}},y:{ticks:{color:cc.text},grid:{color:cc.grid}}}}});
+    // subject completion
+    el = document.getElementById('an_subj'); destroyChart('an_subj');
+    const subs = state.subjects.filter(s=>chaptersOf(s.id).length);
+    chartRegistry['an_subj']=new Chart(el,{type:'bar',data:{labels:subs.map(s=>s.name),datasets:[{data:subs.map(s=>subjectStats(s.id).pct),backgroundColor:subs.map(s=>SUBJECT_COLORS[s.name]),borderRadius:5}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{max:100,ticks:{color:cc.text},grid:{color:cc.grid}},y:{ticks:{color:cc.text},grid:{display:false}}}}});
+    // lecture completion donut
+    el = document.getElementById('an_lec'); destroyChart('an_lec');
+    const lecDone = state.lectures.filter(l=>l.status==='Completed').length;
+    const lecWatch = state.lectures.filter(l=>l.status==='Watching').length;
+    const lecNot = state.lectures.length-lecDone-lecWatch;
+    chartRegistry['an_lec']=new Chart(el,{type:'doughnut',data:{labels:['Completed','Watching','Not Started'],datasets:[{data:[lecDone,lecWatch,lecNot],backgroundColor:['#33C481','#F5A623','#232C42'],borderWidth:0}]},options:{cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:cc.text,boxWidth:10,font:{size:11}}}}}});
+    // planned vs actual
+    el = document.getElementById('an_pva'); destroyChart('an_pva');
+    const pLabels=[],planned=[],actual=[];
+    for(let i=6;i>=0;i--){ const d=daysAgoISO(i); pLabels.push(new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'short'})); planned.push(state.goals.dailyHours); actual.push(Math.round(studyHoursBetween(d,d)*10)/10); }
+    chartRegistry['an_pva']=new Chart(el,{type:'line',data:{labels:pLabels,datasets:[{label:'Planned',data:planned,borderColor:cc.grid,borderDash:[5,4],tension:.3},{label:'Actual',data:actual,borderColor:'#7C6CF6',backgroundColor:'#7C6CF633',fill:true,tension:.35}]},options:{plugins:{legend:{labels:{color:cc.text,font:{size:11}}}},scales:{x:{ticks:{color:cc.text},grid:{display:false}},y:{ticks:{color:cc.text},grid:{color:cc.grid}}}}});
+    // revision/pyq
+    el = document.getElementById('an_rev'); destroyChart('an_rev');
+    const revDone = state.revisions.filter(r=>r.status==='Done').length;
+    const revPending = state.revisions.length-revDone;
+    const pyqAtt = state.pyqs.reduce((a,p)=>a+p.attempted,0);
+    const pyqTotal = state.pyqs.reduce((a,p)=>a+p.total,0);
+    chartRegistry['an_rev']=new Chart(el,{type:'bar',data:{labels:['Revisions Done','Revisions Pending','PYQs Attempted','PYQs Remaining'],datasets:[{data:[revDone,revPending,pyqAtt,Math.max(pyqTotal-pyqAtt,0)],backgroundColor:['#33C481','#F0555A','#3FC6E0','#232C42'],borderRadius:5}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:cc.text},grid:{display:false}},y:{ticks:{color:cc.text},grid:{color:cc.grid}}}}});
+  };
+  return html;
+}
+
+/* ============================= GOALS ============================= */
+function pageGoals(){
+  const g = state.goals;
+  const [wkStart,wkEnd]=weekBounds();
+  const weekHrs = studyHoursBetween(wkStart,wkEnd);
+  const monthStart = todayISO().slice(0,7)+'-01';
+  const monthHrs = studyHoursBetween(monthStart, todayISO());
+  const todayHrs = studyHoursBetween(todayISO(),todayISO());
+  const weekLec = state.lectures.filter(l=>l.status==='Completed' && l.watchDate>=wkStart && l.watchDate<=wkEnd).length;
+  const todayLec = state.lectures.filter(l=>l.status==='Completed' && l.watchDate===todayISO()).length;
+  const pyqToday = 0; // per-day pyq logging not tracked separately; show total attempted
+  const testsThisWeek = state.tests.filter(t=>t.date>=wkStart && t.date<=wkEnd).length;
+  const chaptersThisWeek = state.chapters.filter(c=>c.actualDate>=wkStart && c.actualDate<=wkEnd).length;
+
+  const goalRow = (label,current,target,unit)=>{
+    const pct = target? clamp(Math.round(current/target*100),0,100):0;
+    return `<div style="margin-bottom:16px;"><div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span>${label}</span><b style="font-family:var(--font-mono)">${current}${unit} / ${target}${unit}</b></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background:${pct>=100?'var(--green)':'linear-gradient(90deg,var(--accent),var(--cyan))'}"></div></div></div>`;
+  };
+  let html = topbar('Goals', 'Set targets, track them automatically', `<button class="btn secondary" onclick="openGoalsModal()">${ICONS.edit} Edit Goals</button>`);
+  html += `<div class="grid g2">
+    <div class="card"><div class="section-title">Study Hours</div>
+      ${goalRow('Daily', Math.round(todayHrs*10)/10, g.dailyHours,'h')}
+      ${goalRow('Weekly', Math.round(weekHrs*10)/10, g.weeklyHours,'h')}
+      ${goalRow('Monthly', Math.round(monthHrs*10)/10, g.monthlyHours,'h')}
+    </div>
+    <div class="card"><div class="section-title">Activity Targets</div>
+      ${goalRow('Daily Lectures', todayLec, g.dailyLectures,'')}
+      ${goalRow('Weekly Lectures', weekLec, g.weeklyLectures,'')}
+      ${goalRow('Chapters / Week', chaptersThisWeek, g.chaptersPerWeek,'')}
+      ${goalRow('Tests / Week', testsThisWeek, g.testsPerWeek,'')}
+    </div>
+  </div>`;
+  html += `<div class="card" style="margin-top:16px;"><div class="section-title">Achievements <span class="smallmuted">Level ${levelFromXP(totalXP())} · ${totalXP()} XP</span></div>
+    <div class="badge-row">${badgeList().map(b=>`<div class="badge ${b.earned?'earned':''}"><div class="bicon">${b.icon}</div><div class="btitle">${b.title}</div></div>`).join('')}</div>
+  </div>`;
+  return html;
+}
+function openGoalsModal(){
+  const g = state.goals;
+  showModal('Edit Goals', `
+    <div class="fieldrow"><div class="field"><label>Daily Hours</label><input id="f_dh" type="number" value="${g.dailyHours}"></div><div class="field"><label>Weekly Hours</label><input id="f_wh" type="number" value="${g.weeklyHours}"></div></div>
+    <div class="fieldrow"><div class="field"><label>Monthly Hours</label><input id="f_mh" type="number" value="${g.monthlyHours}"></div><div class="field"><label>Daily Lectures</label><input id="f_dl" type="number" value="${g.dailyLectures}"></div></div>
+    <div class="fieldrow"><div class="field"><label>Weekly Lectures</label><input id="f_wl" type="number" value="${g.weeklyLectures}"></div><div class="field"><label>Chapters / Week</label><input id="f_cw" type="number" value="${g.chaptersPerWeek}"></div></div>
+    <div class="fieldrow"><div class="field"><label>PYQs / Day</label><input id="f_pd" type="number" value="${g.pyqsPerDay}"></div><div class="field"><label>Tests / Week</label><input id="f_tw" type="number" value="${g.testsPerWeek}"></div></div>
+  `, ()=>{
+    Object.assign(g, {dailyHours:+document.getElementById('f_dh').value||1, weeklyHours:+document.getElementById('f_wh').value||1,
+      monthlyHours:+document.getElementById('f_mh').value||1, dailyLectures:+document.getElementById('f_dl').value||1,
+      weeklyLectures:+document.getElementById('f_wl').value||1, chaptersPerWeek:+document.getElementById('f_cw').value||1,
+      pyqsPerDay:+document.getElementById('f_pd').value||1, testsPerWeek:+document.getElementById('f_tw').value||1});
+    closeModal(); markDirty();
+  });
+}
+
+/* ============================= SETTINGS ============================= */
+function pageSettings(){
+  let html = topbar('Settings', 'Theme, data backup and app preferences');
+  html += `<div class="grid g2">
+    <div class="card">
+      <div class="section-title">Appearance</div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn ${ui.theme==='dark'?'':'secondary'}" onclick="setTheme('dark')">${ICONS.moon} Dark</button>
+        <button class="btn ${ui.theme==='light'?'':'secondary'}" onclick="setTheme('light')">${ICONS.sun} Light</button>
+      </div>
+      <div class="section-title" style="margin-top:22px;">Exam Dates</div>
+      <div class="field"><label>CBSE Board Exam</label><input id="f_cbse_date" type="date" value="${state.settings.examDate_cbse}" onchange="state.settings.examDate_cbse=this.value; markDirty()"></div>
+      <div class="field"><label>JEE Exam</label><input id="f_jee_date" type="date" value="${state.settings.examDate_jee}" onchange="state.settings.examDate_jee=this.value; markDirty()"></div>
+    </div>
+    
+<div class="card">
+  <div class="section-title">Account & Admin</div>
+  <p class="smallmuted">This single-file version can protect data on this browser. It cannot know how many people use your website globally unless you connect it to a backend.</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn secondary" onclick="c12ChangeCredentials()">Change Login ID / Password</button>
+    <button class="btn secondary" onclick="c12Logout()">Logout</button>
+  </div>
+  <div class="admin-box">
+    <b>Local usage information</b>
+    <div class="smallmuted" style="margin-top:6px">Current browser session: logged in</div>
+    <div class="smallmuted">For real Active Users, total users, daily/monthly users, and usage charts, connect the app to a server database/analytics service.</div>
+  </div>
+</div>
+
+
+<div class="card">
+  <div class="section-title">Account</div>
+  <p class="smallmuted">Use Login, Sign Up or Guest mode. Admin can open the User Dashboard.</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn secondary" onclick="c12Logout()">Logout</button>
+    <button class="btn secondary" onclick="c12ShowAdminDashboard()">Admin User Dashboard</button>
+  </div>
+</div>
+
+
+<div class="card" id="appUserDataSection">
+  <div class="section-title">Admin — App User Data</div>
+  <p class="smallmuted">Only your Admin account should use this section. View registered users, active sessions, login counts and last-login information.</p>
+  <button class="btn" onclick="c12OpenUserData()">Open App User Data</button>
+</div>
+
+<div class="card">
+      <div class="section-title">Data Management</div>
+      <p class="smallmuted" style="margin-bottom:14px;">Your data is saved automatically. No stream or syllabus is pre-loaded. Add your own subjects and chapters, then export a backup anytime.</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn secondary" onclick="exportData()">${ICONS.download} Export Backup</button>
+        <label class="btn secondary" style="cursor:pointer;">${ICONS.upload} Import Backup<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
+        <button class="btn danger" onclick="resetData()">${ICONS.trash} Reset All Data</button>
+      </div>
+    </div>
+  </div>`;
+  return html;
+}
+function setTheme(t){
+  ui.theme=t;
+  document.body.setAttribute('data-theme',t);
+  try{ localStorage.setItem('command12-theme', t); }catch(e){}
+  render();
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='command12-backup-'+todayISO()+'.json'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup downloaded');
+}
+function importData(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ try{ const data = JSON.parse(reader.result); state = data; markDirty(); toast('Backup restored'); }catch(err){ toast('Invalid backup file'); } };
+  reader.readAsText(file);
+}
+function resetData(){
+  if(!confirm('This will permanently delete ALL subjects, chapters, lectures, sessions, tests, PYQs, revisions and planner data. The app will become completely blank. Continue?')) return;
+  clearTimeout(saveTimer);
+  state = emptyState();
+  try{
+    localStorage.removeItem('command12-app-data');
+    localStorage.setItem('command12-app-data', JSON.stringify(state));
+  }catch(e){
+    console.error('Reset save failed:', e);
+    toast('Reset failed — browser storage may be blocked');
+    return;
+  }
+  ui.page = 'dashboard'; ui.chapterFilter = {}; ui.lectureFilter = {};
+  render();
+  toast('Everything cleared — app is now blank');
+}
+function toast(msg){
+  const el = document.createElement('div'); el.className='toast'; el.textContent=msg;
+  document.getElementById('toastRoot').appendChild(el);
+  setTimeout(()=>el.remove(), 2600);
+}
+
+/* ============================= MODAL ============================= */
+function showModal(title, bodyHtml, onSave, wide){
+  document.getElementById('modalRoot').innerHTML = `<div class="modal-bg" onclick="if(event.target===this) closeModal()">
+    <div class="modal" style="${wide?'width:600px':''}">
+      <h3>${title}</h3>
+      <div id="modalBody">${bodyHtml}</div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:18px;">
+        <button class="btn secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn" id="modalSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modalSaveBtn').onclick = onSave;
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+
+
+/* ============================= HABIT TRACKER ============================= */
+function habitCompletionForDate(date){
+  const habits = state.habits || [];
+  const done = habits.filter(h => h.history && h.history[date]).length;
+  return {done,total:habits.length,pct:habits.length?Math.round(done/habits.length*100):0};
+}
+function pageHabits(){
+  const month = ui.habitMonth ?? new Date().getMonth();
+  const year = ui.habitYear ?? new Date().getFullYear();
+  const habits = state.habits || [];
+  const days = new Date(year,month+1,0).getDate();
+  let html = topbar('Habit Tracker','Track daily habits with monthly tick columns and consistency graphs',
+    `<button class="btn" onclick="openHabitModal()">${ICONS.plus} Add Habit</button>`);
+  html += `<div class="card" style="margin-bottom:16px;"><div class="filterbar">
+    <button class="btn secondary" onclick="shiftHabitMonth(-1)">←</button>
+    <div style="font-family:var(--font-display);font-weight:700;font-size:16px;min-width:170px;text-align:center;">${new Date(year,month,1).toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</div>
+    <button class="btn secondary" onclick="shiftHabitMonth(1)">→</button>
+    <span class="smallmuted">${habits.length} habits</span></div>
+    <div style="overflow-x:auto;"><table><thead><tr><th style="position:sticky;left:0;background:var(--surface);z-index:2;min-width:160px;">Habit</th>${Array.from({length:days},(_,i)=>{const dt=new Date(year,month,i+1);const wd=dt.toLocaleDateString('en-IN',{weekday:'short'});return `<th style="text-align:center;min-width:42px;line-height:1.15;"><div>${i+1}</div><small class="smallmuted">${wd}</small></th>`;}).join('')}<th style="text-align:center;">%</th></tr></thead><tbody>
+    ${habits.map(h=>{let done=0;const cells=Array.from({length:days},(_,i)=>{const date=`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;const checked=!!(h.history&&h.history[date]);if(checked)done++;return `<td style="text-align:center;"><input type="checkbox" ${checked?'checked':''} onchange="toggleHabit('${h.id}','${date}',this.checked)"></td>`;}).join('');const pct=days?Math.round(done/days*100):0;return `<tr><td style="position:sticky;left:0;background:var(--surface);z-index:1;"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><span style="font-weight:600;">${h.name}</span><button class="icon-action" onclick="deleteHabit('${h.id}')">${ICONS.trash}</button></div></td>${cells}<td style="text-align:center;"><span class="pill ${pct>=80?'green':pct>=50?'amber':'gray'}">${pct}%</span></td></tr>`;}).join('') || `<tr><td colspan="${days+2}" class="empty">Add your first habit to start tracking.</td></tr>`}
+    </tbody></table></div></div>`;
+  html += `<div class="grid g2"><div class="card"><div class="section-title">Daily Consistency · Last 30 Days</div><canvas id="chartHabitDaily" height="180"></canvas></div><div class="card"><div class="section-title">Monthly Consistency · This Year</div><canvas id="chartHabitMonthly" height="180"></canvas></div></div>`;
+  html += `<div class="card" style="margin-top:16px;"><div class="section-title">Habit-wise Consistency · ${new Date(year,month,1).toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</div><canvas id="chartHabitConsistency" height="150"></canvas></div>`;
+  afterRenderHooks=()=>{drawHabitDailyChart('chartHabitDaily');drawHabitMonthlyChart('chartHabitMonthly');drawHabitConsistencyChart('chartHabitConsistency');};
+  return html;
+}
+function shiftHabitMonth(delta){let d=new Date(ui.habitYear??new Date().getFullYear(),ui.habitMonth??new Date().getMonth(),1);d.setMonth(d.getMonth()+delta);ui.habitMonth=d.getMonth();ui.habitYear=d.getFullYear();render();}
+function toggleHabit(id,date,checked){const h=(state.habits||[]).find(x=>x.id===id);if(!h)return;h.history=h.history||{};if(checked)h.history[date]=true;else delete h.history[date];markDirty();}
+function deleteHabit(id){if(!confirm('Delete this habit?'))return;state.habits=(state.habits||[]).filter(h=>h.id!==id);markDirty();}
+function openHabitModal(){showModal('Add Habit',`<div class="field"><label>Habit Name</label><input id="habitName" placeholder="e.g. Morning Run"></div>`,()=>{const name=document.getElementById('habitName').value.trim();if(!name)return;state.habits=state.habits||[];state.habits.push({id:uid(),name,history:{}});closeModal();markDirty();});}
+function drawHabitDailyChart(canvasId){const el=document.getElementById(canvasId);if(!el)return;destroyChart(canvasId);const labels=[],data=[];for(let i=29;i>=0;i--){const d=daysAgoISO(i);labels.push(new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short'}));data.push(habitCompletionForDate(d).pct);}const cc=chartColors();chartRegistry[canvasId]=new Chart(el,{type:'line',data:{labels,datasets:[{label:'Consistency %',data,borderColor:'#7C6CF6',backgroundColor:'#7C6CF622',fill:true,tension:.35,pointRadius:3}]},options:{responsive:true,plugins:{legend:{labels:{color:cc.text}}},scales:{x:{ticks:{color:cc.text,maxTicksLimit:8},grid:{display:false}},y:{min:0,max:100,ticks:{color:cc.text,callback:v=>v+'%'},grid:{color:cc.grid}}}}});}
+function drawHabitMonthlyChart(canvasId){
+  const el=document.getElementById(canvasId);if(!el)return;destroyChart(canvasId);
+  const year=ui.habitYear??new Date().getFullYear();
+  const labels=[],data=[];
+  for(let m=0;m<12;m++){
+    const days=new Date(year,m+1,0).getDate();let total=0,done=0;
+    for(let d=1;d<=days;d++){const iso=`${year}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const r=habitCompletionForDate(iso);total+=r.total;done+=r.done;}
+    labels.push(new Date(year,m,1).toLocaleDateString('en-IN',{month:'short'}));data.push(total?Math.round(done/total*100):0);
+  }
+  const cc=chartColors();chartRegistry[canvasId]=new Chart(el,{type:'line',data:{labels,datasets:[{label:'Monthly consistency %',data,borderColor:'#3FC6E0',backgroundColor:'#3FC6E022',fill:true,tension:.3,pointRadius:3}]},options:{responsive:true,plugins:{legend:{labels:{color:cc.text}}},scales:{x:{ticks:{color:cc.text},grid:{display:false}},y:{min:0,max:100,ticks:{color:cc.text,callback:v=>v+'%'},grid:{color:cc.grid}}}}});
+}
+function drawHabitConsistencyChart(canvasId){const el=document.getElementById(canvasId);if(!el)return;destroyChart(canvasId);const month=ui.habitMonth??new Date().getMonth(),year=ui.habitYear??new Date().getFullYear(),days=new Date(year,month+1,0).getDate(),labels=(state.habits||[]).map(h=>h.name),data=(state.habits||[]).map(h=>{let done=0;for(let i=1;i<=days;i++){const date=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;if(h.history&&h.history[date])done++;}return days?Math.round(done/days*100):0;});const cc=chartColors();chartRegistry[canvasId]=new Chart(el,{type:'bar',data:{labels,datasets:[{label:'Consistency %',data,backgroundColor:'#33C481',borderRadius:6}]},options:{responsive:true,plugins:{legend:{labels:{color:cc.text}}},scales:{x:{ticks:{color:cc.text},grid:{display:false}},y:{min:0,max:100,ticks:{color:cc.text,callback:v=>v+'%'},grid:{color:cc.grid}}}}});}
+
+/* ============================= INIT ============================= */
+window.setPage = setPage; window.toggleTheme = toggleTheme; window.setTheme = setTheme;
+window.openSubjectModal = openSubjectModal; window.deleteSubject = deleteSubject; window.editSubjectDirect = editSubjectDirect; window.deleteSubjectDirect = deleteSubjectDirect; window.openSubjectActions = openSubjectActions; window.openSubject = openSubject; window.openChapterModalForSubject = openChapterModalForSubject; window.openChapterQuickMenu = openChapterQuickMenu;
+window.openChapterModal = openChapterModal; window.openSubjectPicker = openSubjectPicker; window.openChapterPicker = openChapterPicker; window.openChapterChooserGlobal = openChapterChooserGlobal; window.openLectureChooser = openLectureChooser; window.openLectureModalForSubject = openLectureModalForSubject; window.deleteChapter = deleteChapter; window.openChecklistModal = openChecklistModal;
+window.openLectureModal = openLectureModal; window.deleteLecture = deleteLecture; window.cycleLectureStatus = cycleLectureStatus; window.updateBacklog = updateBacklog;
+window.openSessionModal = openSessionModal; window.deleteSession = deleteSession;
+window.toggleTask = toggleTask; window.openTaskModal = openTaskModal; window.deleteTask = deleteTask;
+window.markRevisionDone = markRevisionDone;
+window.openTestModal = openTestModal; window.deleteTest = deleteTest;
+window.openPYQModal = openPYQModal; window.deletePYQ = deletePYQ;
+window.shiftMonth = shiftMonth;
+window.openGoalsModal = openGoalsModal;
+window.exportData = exportData; window.importData = importData; window.resetData = resetData;
+window.closeModal = closeModal; window.markDirty = markDirty;
+window.openHabitModal=openHabitModal; window.toggleHabit=toggleHabit; window.deleteHabit=deleteHabit; window.shiftHabitMonth=shiftHabitMonth;
+window.addEventListener('command12-data-saved',()=>{const el=document.getElementById('saveStatus');if(el)el.textContent='● '+lastSavedLabel();});
+window.addEventListener('beforeunload',()=>persist(true));
+window.addEventListener('pagehide',()=>persist(true));
+
+(async function init(){
+  await loadState();
+  render();
+})();
+</script>
+
+<style>
+#authOverlay{position:fixed;inset:0;background:var(--bg,#f5f7fb);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
+#authCard{width:min(430px,100%);background:var(--surface,#fff);border:1px solid var(--border,#ddd);border-radius:18px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.12)}
+#authCard h1{margin:0 0 8px}.auth-note{font-size:13px;opacity:.7;margin-bottom:18px}
+#authCard input{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:10px;border:1px solid #ccc}
+#authMsg{min-height:20px;margin-top:10px;font-size:13px}
+.admin-box{padding:16px;border:1px solid var(--border,#ddd);border-radius:14px;margin-top:14px}
+</style>
+
+<style>
+#c12AuthOverlay{position:fixed;inset:0;background:var(--bg,#f5f7fb);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px}
+#c12AuthCard{width:min(460px,100%);background:var(--surface,#fff);border:1px solid var(--border,#ddd);border-radius:20px;padding:28px;box-shadow:0 20px 70px rgba(0,0,0,.14)}
+.c12-tabs{display:flex;gap:8px;margin:18px 0}.c12-tabs button{flex:1}.c12-form{display:none}.c12-form.active{display:block}
+.c12-form input{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:10px;border:1px solid #ccc}
+.c12-auth-note{font-size:13px;opacity:.72;line-height:1.45}.c12-auth-msg{min-height:22px;margin-top:10px;font-size:13px}
+.c12-admin-stat{display:inline-flex;flex-direction:column;min-width:145px;padding:14px;margin:5px;border:1px solid var(--border,#ddd);border-radius:12px}
+.c12-admin-stat strong{font-size:24px}.c12-admin-stat span{font-size:12px;opacity:.7}
+</style>
+
+<div id="c12AuthOverlay">
+  <div id="c12AuthCard">
+    <h1>Command12</h1>
+    <div class="c12-auth-note">Study Tracker • Habit Tracker • Cloud-ready Accounts</div>
+    <div class="c12-tabs">
+      <button class="btn" id="c12TabLogin" onclick="c12ShowAuth('login')">Login</button>
+      <button class="btn secondary" id="c12TabSignup" onclick="c12ShowAuth('signup')">Sign Up</button>
+      <button class="btn secondary" onclick="c12Guest()">Guest</button>
+    </div>
+
+    <div id="c12LoginForm" class="c12-form active">
+      <input id="c12LoginId" autocomplete="username" placeholder="Login ID / Email">
+      <input id="c12LoginPass" type="password" autocomplete="current-password" placeholder="Password">
+      <button class="btn" style="width:100%;margin-top:8px" onclick="c12DoLogin()">Login</button>
+    </div>
+
+    <div id="c12SignupForm" class="c12-form">
+      <input id="c12SignupName" placeholder="Full Name">
+      <input id="c12SignupId" autocomplete="username" placeholder="Choose Login ID / Email">
+      <input id="c12SignupPass" type="password" autocomplete="new-password" placeholder="Password (minimum 6 characters)">
+      <button class="btn" style="width:100%;margin-top:8px" onclick="c12DoSignup()">Create Account</button>
+    </div>
+
+    <div id="c12AuthMsg" class="c12-auth-msg"></div>
+    <div class="c12-auth-note" style="margin-top:12px">
+      Guest mode stores data only in this browser. Registered accounts in this standalone HTML prototype are also local.
+      For real multi-device accounts and a central admin dashboard, connect the app to a backend database.
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const USERS='command12-users-v2';
+  const SESSION='command12-session-v2';
+  const ACTIVE='command12-active-v2';
+  const DEFAULT={id:'admin',name:'Administrator',pass:'admin123',role:'admin',createdAt:new Date().toISOString(),lastLogin:null};
+
+  function users(){
+    try{return JSON.parse(localStorage.getItem(USERS)||'[]')}catch(e){return []}
+  }
+  function saveUsers(u){localStorage.setItem(USERS,JSON.stringify(u))}
+  function ensureAdmin(){
+    let u=users();
+    if(!u.length) saveUsers([DEFAULT]);
+  }
+  function msg(t){document.getElementById('c12AuthMsg').textContent=t||''}
+  window.c12ShowAuth=function(which){
+    document.getElementById('c12LoginForm').classList.toggle('active',which==='login');
+    document.getElementById('c12SignupForm').classList.toggle('active',which==='signup');
+    msg('');
+  };
+  window.c12Guest=function(){
+    const s={id:'guest-'+Math.random().toString(36).slice(2,10),name:'Guest',role:'guest',loginAt:new Date().toISOString()};
+    sessionStorage.setItem(SESSION,JSON.stringify(s));
+    localStorage.setItem(ACTIVE,JSON.stringify({id:s.id,name:s.name,role:s.role,lastSeen:Date.now()}));
+    document.getElementById('c12AuthOverlay').style.display='none';
+    if(window.toast) toast('Continuing as Guest');
+  };
+  window.c12DoSignup=function(){
+    const name=document.getElementById('c12SignupName').value.trim();
+    const id=document.getElementById('c12SignupId').value.trim().toLowerCase();
+    const pass=document.getElementById('c12SignupPass').value;
+    if(!name||!id||pass.length<6){msg('Enter name, Login ID and a password of at least 6 characters.');return}
+    let u=users();
+    if(u.some(x=>x.id===id)){msg('This Login ID already exists.');return}
+    const nu={id,name,pass,role:'user',createdAt:new Date().toISOString(),lastLogin:new Date().toISOString()};
+    u.push(nu); saveUsers(u);
+    const s={id,name,role:'user',loginAt:new Date().toISOString()};
+    sessionStorage.setItem(SESSION,JSON.stringify(s));
+    localStorage.setItem(ACTIVE,JSON.stringify({id,name,role:'user',lastSeen:Date.now()}));
+    document.getElementById('c12AuthOverlay').style.display='none';
+    if(window.toast) toast('Account created successfully');
+  };
+  window.c12DoLogin=function(){
+    const id=document.getElementById('c12LoginId').value.trim().toLowerCase();
+    const pass=document.getElementById('c12LoginPass').value;
+    const u=users().find(x=>x.id===id && x.pass===pass);
+    if(!u){msg('Invalid Login ID or Password.');return}
+    u.lastLogin=new Date().toISOString();
+    saveUsers(users().map(x=>x.id===u.id?u:x));
+    const s={id:u.id,name:u.name,role:u.role,loginAt:new Date().toISOString()};
+    sessionStorage.setItem(SESSION,JSON.stringify(s));
+    localStorage.setItem(ACTIVE,JSON.stringify({id:u.id,name:u.name,role:u.role,lastSeen:Date.now()}));
+    document.getElementById('c12AuthOverlay').style.display='none';
+    if(window.toast) toast('Welcome, '+u.name);
+  };
+  window.c12Logout=function(){
+    try{
+      sessionStorage.removeItem('command12-session-v2');
+      sessionStorage.removeItem('command12-auth-ok');
+      localStorage.removeItem('command12-active-v2');
+    }catch(e){}
+    // Return to the login screen without reloading the whole app.
+    const overlay=document.getElementById('c12AuthOverlay') || document.getElementById('authOverlay');
+    if(overlay){
+      overlay.style.display='flex';
+      const li=document.getElementById('c12LoginId');
+      const lp=document.getElementById('c12LoginPass');
+      if(li) li.value='';
+      if(lp) lp.value='';
+      const m=document.getElementById('c12AuthMsg');
+      if(m) m.textContent='You have been logged out.';
+      if(window.c12ShowAuth) window.c12ShowAuth('login');
+    }else{
+      location.href=location.href.split('#')[0];
+    }
+  };
+  window.c12CurrentUser=function(){try{return JSON.parse(sessionStorage.getItem(SESSION)||'null')}catch(e){return null}};
+  window.c12AdminStats=function(){
+    const u=users();
+    const a=JSON.parse(localStorage.getItem(ACTIVE)||'null');
+    const active=a && Date.now()-a.lastSeen<15*60*1000 ? 1 : 0;
+    return {total:u.length,active,registered:u.filter(x=>x.role==='user').length};
+  };
+  window.c12ShowAdminDashboard=function(){
+    if(window.c12OpenUserData){ window.c12OpenUserData(); return; }
+    const me=c12CurrentUser();
+    if(!me || me.role!=='admin'){alert('Admin access required.');return}
+    const st=c12AdminStats();
+    const u=users();
+    let rows=u.map(x=>'<tr><td>'+x.name+'</td><td>'+x.id+'</td><td>'+x.role+'</td><td>'+new Date(x.createdAt).toLocaleString()+'</td><td>'+(x.lastLogin?new Date(x.lastLogin).toLocaleString():'—')+'</td></tr>').join('');
+    const w=document.createElement('div');
+    w.className='modal-bg';
+    w.innerHTML='<div class="modal" style="width:min(900px,95vw)"><h3>Admin User Dashboard</h3>'+
+      '<div><div class="c12-admin-stat"><strong>'+st.total+'</strong><span>Total Accounts</span></div>'+
+      '<div class="c12-admin-stat"><strong>'+st.registered+'</strong><span>Registered Users</span></div>'+
+      '<div class="c12-admin-stat"><strong>'+st.active+'</strong><span>Active on this browser</span></div></div>'+
+      '<p class="smallmuted">This standalone HTML can only measure users/accounts stored in this browser. It cannot count visitors across the internet.</p>'+
+      '<div style="overflow:auto"><table><thead><tr><th>Name</th><th>Login ID</th><th>Role</th><th>Created</th><th>Last Login</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      '<div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="this.closest(\'.modal-bg\').remove()">Close</button></div></div>';
+    document.body.appendChild(w);
+  };
+  window.c12AddAdminButton=function(){
+    const me=c12CurrentUser();
+    if(!me||me.role!=='admin')return;
+    const root=document.body;
+    const b=document.createElement('button');
+    b.className='btn secondary';
+    b.textContent='Admin Users';
+    b.style.position='fixed';b.style.right='18px';b.style.bottom='18px';b.style.zIndex='5000';
+    b.onclick=c12ShowAdminDashboard;
+    root.appendChild(b);
+  };
+  ensureAdmin();
+  document.addEventListener('DOMContentLoaded',function(){
+    const s=c12CurrentUser();
+    if(s){
+      document.getElementById('c12AuthOverlay').style.display='none';
+      localStorage.setItem(ACTIVE,JSON.stringify({id:s.id,name:s.name,role:s.role,lastSeen:Date.now()}));
+      if(s.role==='admin') c12AddAdminButton();
+    }
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  const USERS='command12-users-v2', LOGINS='command12-login-events-v1', ACT='command12-activity-v1';
+  function read(k,d){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}}
+  function users(){return read(USERS,[])}
+  function logins(){return read(LOGINS,[])}
+  function activities(){return read(ACT,[])}
+  function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+  function current(){try{return JSON.parse(sessionStorage.getItem('command12-session-v2')||'null')}catch(e){return null}}
+  function track(){
+    const u=current(); if(!u)return;
+    const now=new Date().toISOString();
+    const ev=logins(); ev.push({id:u.id,role:u.role,time:now}); save(LOGINS,ev.slice(-5000));
+    const ac=activities().filter(x=>x.id!==u.id);
+    ac.push({id:u.id,name:u.name,role:u.role,lastSeen:Date.now()}); save(ACT,ac);
+  }
+  window.c12TrackLogin=track;
+  window.c12OpenUserData=function(){
+    const me=current(); if(!me||me.role!=='admin'){alert('Admin access required.');return}
+    const us=users(), ls=logins(), ac=activities(), now=Date.now();
+    const active=ac.filter(x=>now-x.lastSeen<15*60*1000).length;
+    const today=new Date().toISOString().slice(0,10);
+    const todayLogins=ls.filter(x=>x.time.slice(0,10)===today).length;
+    const registered=us.filter(x=>x.role==='user').length;
+    const guests=ac.filter(x=>x.role==='guest' && now-x.lastSeen<24*60*60*1000).length;
+    const rows=us.map(x=>{
+      const ev=ls.filter(e=>e.id===x.id);
+      const last=ev.length?ev[ev.length-1].time:x.lastLogin;
+      return '<tr><td>'+x.name+'</td><td>'+x.id+'</td><td>'+x.role+'</td><td>'+ev.length+'</td><td>'+(last?new Date(last).toLocaleString():'—')+'</td></tr>';
+    }).join('');
+    const wrap=document.createElement('div'); wrap.className='modal-bg';
+    wrap.innerHTML=`<div class="modal" style="width:min(1050px,96vw)">
+      <h3>App User Data</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0">
+        <div class="c12-admin-stat"><strong>${us.length}</strong><span>Total Accounts</span></div>
+        <div class="c12-admin-stat"><strong>${registered}</strong><span>Registered Users</span></div>
+        <div class="c12-admin-stat"><strong>${active}</strong><span>Active (15 min)</span></div>
+        <div class="c12-admin-stat"><strong>${ls.length}</strong><span>Total Logins</span></div>
+        <div class="c12-admin-stat"><strong>${todayLogins}</strong><span>Today's Logins</span></div>
+        <div class="c12-admin-stat"><strong>${guests}</strong><span>Recent Guests</span></div>
+      </div>
+      <p class="smallmuted">Admin-only section. In this standalone file, statistics are stored locally in this browser. A cloud backend is required for website-wide user analytics.</p>
+      <div style="overflow:auto;max-height:52vh"><table><thead><tr><th>Name</th><th>Login ID</th><th>Role</th><th>Login Count</th><th>Last Login</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="this.closest('.modal-bg').remove()">Close</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+  };
+  window.c12AddUserDataButton=function(){
+    if(document.getElementById('c12UserDataBtn'))return;
+    const me=current(); if(!me||me.role!=='admin')return;
+    const b=document.createElement('button');
+    b.id='c12UserDataBtn'; b.className='btn secondary'; b.textContent='App User Data';
+    b.style.position='fixed'; b.style.right='18px'; b.style.bottom='62px'; b.style.zIndex='5000';
+    b.onclick=c12OpenUserData; document.body.appendChild(b);
+  };
+  document.addEventListener('DOMContentLoaded',function(){
+    setTimeout(function(){track();c12AddUserDataButton()},200);
+  });
+})();
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    try{
+      const session=sessionStorage.getItem('command12-session-v2');
+      const overlay=document.getElementById('c12AuthOverlay');
+      if(!session && overlay) overlay.style.display='flex';
+    }catch(e){}
+  },100);
+});
+</script>
+
+</body>
+</html>
